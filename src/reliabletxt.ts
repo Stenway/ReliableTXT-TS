@@ -15,14 +15,14 @@ export abstract class ReliableTxtEncodingUtil {
 		else if (encoding === ReliableTxtEncoding.Utf16) { return 2 }
 		else if (encoding === ReliableTxtEncoding.Utf16Reverse) { return 2 }
 		else if (encoding === ReliableTxtEncoding.Utf32) { return 4 }
-		else { throw new Error() }
+		else { throw new RangeError() }
 	}
 }
 
 // ----------------------------------------------------------------------
 
 export abstract class ReliableTxtLines {
-	static join(...lines: string[]): string {
+	static join(lines: string[]): string {
 		return lines.join("\n")
 	}
 	
@@ -33,15 +33,23 @@ export abstract class ReliableTxtLines {
 
 // ----------------------------------------------------------------------
 
-export class ReliableTxtError extends Error {
-	constructor(message?: string) {
-		super(message)
+export class InvalidUtf16StringError extends Error {
+	constructor() {
+		super("Invalid UTF16 string")
 	}
 }
 
 // ----------------------------------------------------------------------
 
-export class NoReliableTxtPreambleError extends ReliableTxtError {
+export class StringDecodingError extends Error {
+	constructor() {
+		super("Could not decode string")
+	}
+}
+
+// ----------------------------------------------------------------------
+
+export class NoReliableTxtPreambleError extends Error {
 	constructor() {
 		super("Document does not have a ReliableTXT preamble")
 	}
@@ -49,42 +57,195 @@ export class NoReliableTxtPreambleError extends ReliableTxtError {
 
 // ----------------------------------------------------------------------
 
-export class InvalidStringError extends ReliableTxtError {
-	constructor() {
-		super("The string contains an invalid codepoint")
-	}
-}
-
-// ----------------------------------------------------------------------
-
-export class InvalidEncodedDataError extends ReliableTxtError {
-	constructor() {
-		super("Invalid encoded data could not be decoded")
-	}
-}
-
-// ----------------------------------------------------------------------
-
-export abstract class ReliableTxtString {
-	static getCodePoints(text: string): number[] {
-		return Array.from(text).map(c => c.codePointAt(0)!)
-	}
-
-	static isValid(text: string): boolean {
-		for (let i=0; i<text.length; i++) {
-			let firstCodeUnit: number = text.charCodeAt(i)
+export abstract class Utf16String {
+	static isValid(str: string): boolean {
+		for (let i=0; i<str.length; i++) {
+			let firstCodeUnit: number = str.charCodeAt(i)
 			if (firstCodeUnit >= 0xD800 && firstCodeUnit <= 0xDBFF) {
 				i++
-				if (i >= text.length) { return false }
-				let secondCodeUnit: number = text.charCodeAt(i)
+				if (i >= str.length) { return false }
+				let secondCodeUnit: number = str.charCodeAt(i)
 				if (!(secondCodeUnit >= 0xDC00 && secondCodeUnit <= 0xDFFF)) { return false }
 			}
 		}
 		return true
 	}
 
-	static validate(text: string) {
-		if (!ReliableTxtString.isValid(text)) { throw new InvalidStringError() }
+	static validate(str: string) {
+		if (!Utf16String.isValid(str)) { throw new InvalidUtf16StringError() }
+	}
+
+	static getCodePointCount(str: string): number {
+		let count: number = 0
+		for (let i=0; i<str.length; i++) {
+			let firstCodeUnit: number = str.charCodeAt(i)
+			if (firstCodeUnit >= 0xD800 && firstCodeUnit <= 0xDBFF) {
+				i++
+				if (i >= str.length) { throw new InvalidUtf16StringError() }
+				let secondCodeUnit: number = str.charCodeAt(i)
+				if (!(secondCodeUnit >= 0xDC00 && secondCodeUnit <= 0xDFFF)) { throw new InvalidUtf16StringError() }
+			}
+			count++
+		}
+		return count
+	}
+
+	static getCodePointArray(str: string): number[] {
+		let numCodePoints: number = Utf16String.getCodePointCount(str)
+		let codePoints: number[] = new Array<number>(numCodePoints)
+		let codePointIndex: number = 0
+		for (let i=0; i<str.length; i++) {
+			let codePoint: number = str.charCodeAt(i)
+			if (codePoint >= 0xD800 && codePoint <= 0xDBFF) {
+				i++
+				let secondCodeUnit: number = str.charCodeAt(i)
+				codePoint = (codePoint - 0xD800) * 0x400 + secondCodeUnit - 0xDC00 + 0x10000
+			}
+			codePoints[codePointIndex] = codePoint
+			codePointIndex++
+		}
+		return codePoints
+	}
+
+	static getCodePoints(str: string): Uint32Array {
+		let numCodePoints: number = Utf16String.getCodePointCount(str)
+		let codePoints: Uint32Array = new Uint32Array(numCodePoints)
+		let codePointIndex: number = 0
+		for (let i=0; i<str.length; i++) {
+			let codePoint: number = str.charCodeAt(i)
+			if (codePoint >= 0xD800 && codePoint <= 0xDBFF) {
+				i++
+				let secondCodeUnit: number = str.charCodeAt(i)
+				codePoint = (codePoint - 0xD800) * 0x400 + secondCodeUnit - 0xDC00 + 0x10000
+			}
+			codePoints[codePointIndex] = codePoint
+			codePointIndex++
+		}
+		return codePoints
+	}
+
+	static toUtf8Bytes(text: string): Uint8Array {
+		Utf16String.validate(text)
+		let utf8Encoder = new TextEncoder()
+		return utf8Encoder.encode(text)
+	}
+
+	static toUtf16Bytes(text: string, littleEndian: boolean = false): Uint8Array {
+		let byteArray: Uint8Array = new Uint8Array(text.length*2)
+		let dataView: DataView = new DataView(byteArray.buffer)
+		let wasHighSurrogate: boolean = false
+		for (let i=0; i < text.length; i++) {
+			let codeUnit: number = text.charCodeAt(i)
+			if (wasHighSurrogate) {
+				if (!(codeUnit >= 0xDC00 && codeUnit <= 0xDFFF)) { throw new InvalidUtf16StringError() }
+				wasHighSurrogate = false
+			} else if (codeUnit >= 0xD800 && codeUnit <= 0xDBFF) { wasHighSurrogate = true }
+			dataView.setUint16(i*2, codeUnit, littleEndian)
+		}
+		if (wasHighSurrogate) { throw new InvalidUtf16StringError() }
+		return byteArray
+	}
+
+	static toUtf32Bytes(str: string, littleEndian: boolean = false): Uint8Array {
+		let numCodePoints: number = Utf16String.getCodePointCount(str)
+		let byteArray: Uint8Array = new Uint8Array(numCodePoints*4)
+		let dataView: DataView = new DataView(byteArray.buffer)
+		let codePointIndex: number = 0
+		for (let i=0; i < str.length; i++) {
+			let codePoint: number = str.charCodeAt(i)
+			if (codePoint >= 0xD800 && codePoint <= 0xDBFF) {
+				i++
+				let secondCodeUnit: number = str.charCodeAt(i)
+				codePoint = (codePoint - 0xD800) * 0x400 + secondCodeUnit - 0xDC00 + 0x10000
+			}
+			dataView.setUint32(codePointIndex*4, codePoint, littleEndian)
+			codePointIndex++
+		}
+		return byteArray
+	}
+
+	static fromUtf8Bytes(bytes: Uint8Array, skipFirstBom: boolean = false): string {
+		let utf8Decoder: TextDecoder = new TextDecoder("utf-8", {fatal: true, ignoreBOM: !skipFirstBom})
+		try {
+			return utf8Decoder.decode(bytes)
+		} catch (error) {
+			if (error instanceof TypeError) { throw new StringDecodingError() }
+			else { throw error }
+		}
+	}
+
+	static fromUtf16Bytes(bytes: Uint8Array, littleEndian: boolean, skipFirstBom: boolean = false): string {
+		let utf16Decoder: TextDecoder = new TextDecoder("utf-16" + (littleEndian ? "le" : "be"), {fatal: true, ignoreBOM: !skipFirstBom})
+		try {
+			return utf16Decoder.decode(bytes)
+		} catch (error) {
+			if (error instanceof TypeError) { 
+				console.log(error)
+				throw new StringDecodingError() }
+			else { throw error }
+		}
+	}
+
+	static fromUtf32Bytes(bytes: Uint8Array, littleEndian: boolean, skipFirstBom: boolean = false): string {
+		let numCodePoints: number = bytes.length/4
+		let numCodeUnits: number = 0
+		let bytesDataView: DataView = new DataView(bytes.buffer)
+		let startIndex: number = 0
+		if (skipFirstBom && bytesDataView.byteLength >= 4 && bytesDataView.getUint32(0, littleEndian) == 0xFEFF) {
+			startIndex = 1
+		}
+		for (let i=startIndex; i<numCodePoints; i++) {
+			let codePoint: number = bytesDataView.getUint32(4*i, littleEndian)
+			if (codePoint > 0x010000) { numCodeUnits++ }
+			if (codePoint > 0x10FFFF || (codePoint >= 0xD800 && codePoint <= 0xDFFF)) { throw new StringDecodingError() }
+			numCodeUnits++
+		}
+		let utf16Bytes: Uint8Array = new Uint8Array(numCodeUnits*2)
+		let dataView: DataView = new DataView(utf16Bytes.buffer)
+		let codeUnitIndex: number = 0
+		for (let i=startIndex; i<numCodePoints; i++) {
+			let codePoint: number = bytesDataView.getUint32(4*i, littleEndian)
+			if (codePoint > 0x010000) {
+				codePoint -= 0x010000
+				let highSurrogate: number = (codePoint >> 10) + 0xD800
+				dataView.setUint16(codeUnitIndex*2, highSurrogate, false)
+				codeUnitIndex++
+				let lowSurrogate: number = (codePoint % 0x400) + 0xDC00
+				dataView.setUint16(codeUnitIndex*2, lowSurrogate, false)
+			} else {
+				dataView.setUint16(codeUnitIndex*2, codePoint, false)
+			}
+			codeUnitIndex++
+		}
+		return Utf16String.fromUtf16Bytes(utf16Bytes, false)
+	}
+
+	static fromCodePointArray(codePoints: number[]): string {
+		let numCodeUnits: number = 0
+		for (let i=0; i<codePoints.length; i++) {
+			let codePoint: number = codePoints[i]
+			if (codePoint > 0x010000) { numCodeUnits++ }
+			if (codePoint > 0x10FFFF || (codePoint >= 0xD800 && codePoint <= 0xDFFF)) { throw new StringDecodingError() }
+			numCodeUnits++
+		}
+		let utf16Bytes: Uint8Array = new Uint8Array(numCodeUnits*2)
+		let dataView: DataView = new DataView(utf16Bytes.buffer)
+		let codeUnitIndex: number = 0
+		for (let i=0; i<codePoints.length; i++) {
+			let codePoint: number = codePoints[i]
+			if (codePoint > 0x010000) {
+				codePoint -= 0x010000
+				let highSurrogate: number = (codePoint >> 10) + 0xD800
+				dataView.setUint16(codeUnitIndex*2, highSurrogate, false)
+				codeUnitIndex++
+				let lowSurrogate: number = (codePoint % 0x400) + 0xDC00
+				dataView.setUint16(codeUnitIndex*2, lowSurrogate, false)
+			} else {
+				dataView.setUint16(codeUnitIndex*2, codePoint, false)
+			}
+			codeUnitIndex++
+		}
+		return Utf16String.fromUtf16Bytes(utf16Bytes, false)
 	}
 }
 
@@ -97,60 +258,11 @@ export abstract class ReliableTxtEncoder {
 	}
 
 	static encodePart(text: string, encoding: ReliableTxtEncoding): Uint8Array {
-		if (encoding === ReliableTxtEncoding.Utf8) { return ReliableTxtEncoder.encodePartAsUtf8(text) }
-		else if (encoding === ReliableTxtEncoding.Utf16) { return ReliableTxtEncoder.encodePartAsUtf16(text, false) }
-		else if (encoding === ReliableTxtEncoding.Utf16Reverse) { return ReliableTxtEncoder.encodePartAsUtf16(text, true) }
-		else if (encoding === ReliableTxtEncoding.Utf32) { return ReliableTxtEncoder.encodePartAsUtf32(text) }
+		if (encoding === ReliableTxtEncoding.Utf8) { return Utf16String.toUtf8Bytes(text) }
+		else if (encoding === ReliableTxtEncoding.Utf16) { return Utf16String.toUtf16Bytes(text, false) }
+		else if (encoding === ReliableTxtEncoding.Utf16Reverse) { return Utf16String.toUtf16Bytes(text, true) }
+		else if (encoding === ReliableTxtEncoding.Utf32) { return Utf16String.toUtf32Bytes(text, false) }
 		else { throw new RangeError() }
-	}
-
-	private static encodePartAsUtf8(text: string): Uint8Array {
-		ReliableTxtString.validate(text)
-		let utf8Encoder = new TextEncoder()
-		return utf8Encoder.encode(text)
-	}
-
-	private static encodePartAsUtf16(text: string, reverse: boolean): Uint8Array {
-		let byteArray: Uint8Array = new Uint8Array(text.length*2)
-		let dataView: DataView = new DataView(byteArray.buffer)
-		let wasHighSurrogate: boolean = false
-		for (let i=0; i < text.length; i++) {
-			let codeUnit: number = text.charCodeAt(i)
-			if (wasHighSurrogate) {
-				if (!(codeUnit >= 0xDC00 && codeUnit <= 0xDFFF)) { throw new InvalidStringError() }
-				wasHighSurrogate = false
-			} else if (codeUnit >= 0xD800 && codeUnit <= 0xDBFF) { wasHighSurrogate = true }
-			dataView.setUint16(i*2, codeUnit, reverse)
-		}
-		if (wasHighSurrogate) { throw new InvalidStringError() }
-		return byteArray
-	}
-
-	private static encodePartAsUtf32(text: string): Uint8Array {
-		let numCodePoints: number = 0
-		for (let i=0; i<text.length; i++) {
-			let firstCodeUnit: number = text.charCodeAt(i)
-			if (firstCodeUnit >= 0xD800 && firstCodeUnit <= 0xDBFF) {
-				i++
-			}
-			numCodePoints++
-		}
-		let byteArray: Uint8Array = new Uint8Array(numCodePoints*4)
-		let dataView: DataView = new DataView(byteArray.buffer)
-		let cpIndex: number = 0
-		for (let i=0; i < text.length; i++) {
-			let codePoint: number = text.charCodeAt(i)
-			if (codePoint >= 0xD800 && codePoint <= 0xDBFF) {
-				i++
-				if (i >= text.length) { throw new InvalidStringError() }
-				let secondCodeUnit: number = text.charCodeAt(i)
-				if (!(secondCodeUnit >= 0xDC00 && secondCodeUnit <= 0xDFFF)) { throw new InvalidStringError() }
-				codePoint = (codePoint - 0xD800) * 0x400 + secondCodeUnit - 0xDC00 + 0x10000
-			}
-			dataView.setUint32(cpIndex*4, codePoint, false)
-			cpIndex++
-		}
-		return byteArray
 	}
 }
 
@@ -192,75 +304,23 @@ export abstract class ReliableTxtDecoder {
 	
 	static decode(bytes: Uint8Array): ReliableTxtDocument {
 		let encoding: ReliableTxtEncoding = ReliableTxtDecoder.getEncoding(bytes)
-		let text: string = this.decodePart(bytes, encoding)
+		let text: string
+		if (encoding === ReliableTxtEncoding.Utf8) { text = Utf16String.fromUtf8Bytes(bytes, true) }
+		else if (encoding === ReliableTxtEncoding.Utf16) { text = Utf16String.fromUtf16Bytes(bytes, false, true) }
+		else if (encoding === ReliableTxtEncoding.Utf16Reverse) { text = Utf16String.fromUtf16Bytes(bytes, true, true) }
+		else if (encoding === ReliableTxtEncoding.Utf32) { text = Utf16String.fromUtf32Bytes(bytes, false, true) }
+		else { throw new RangeError() }
 		return new ReliableTxtDocument(text, encoding)
 	}
 
 	static decodePart(bytes: Uint8Array, encoding: ReliableTxtEncoding): string {
-		if (encoding === ReliableTxtEncoding.Utf8) { return ReliableTxtDecoder.decodeUtf8(bytes) }
-		else if (encoding === ReliableTxtEncoding.Utf16) { return ReliableTxtDecoder.decodeUtf16(bytes, false) }
-		else if (encoding === ReliableTxtEncoding.Utf16Reverse) { return ReliableTxtDecoder.decodeUtf16(bytes, true) }
-		else if (encoding === ReliableTxtEncoding.Utf32) { return ReliableTxtDecoder.decodeUtf32(bytes) }
+		if (encoding === ReliableTxtEncoding.Utf8) { return Utf16String.fromUtf8Bytes(bytes, false) }
+		else if (encoding === ReliableTxtEncoding.Utf16) { return Utf16String.fromUtf16Bytes(bytes, false) }
+		else if (encoding === ReliableTxtEncoding.Utf16Reverse) { return Utf16String.fromUtf16Bytes(bytes, true) }
+		else if (encoding === ReliableTxtEncoding.Utf32) { return Utf16String.fromUtf32Bytes(bytes, false) }
 		else { throw new RangeError() }
 	}
 	
-	private static decodeUtf8(bytes: Uint8Array): string {
-		let utf8Decoder = new TextDecoder("utf-8", {fatal: true})
-		return utf8Decoder.decode(bytes)
-	}
-
-	private static decodeUtf16(bytes: Uint8Array, reverse: boolean): string {
-		// Workaround: node.js ERR_ENCODING_INVALID_ENCODED_DATA ~270_000_000
-		let utf16Decoder = new TextDecoder("utf-16" + (reverse ? "le" : "be"), {fatal: false})
-		if (bytes.length < 200_000_000) {
-			return utf16Decoder.decode(bytes)
-		} else {
-			const chunkSize: number = 200_000_000
-			let result: string = ""
-			let curPos: number = 0
-			while (true) {
-				let rest: number = bytes.length - curPos
-				let curLength: number = rest >= chunkSize ? chunkSize : rest
-
-				let part: Uint8Array = bytes.slice(curPos, curPos + curLength)
-				curPos += curLength
-				result += utf16Decoder.decode(part)
-				if (curPos >= bytes.length) { break }
-			}
-			bytes.slice()
-			return result
-		}
-	}
-
-	private static decodeUtf32(bytes: Uint8Array): string {
-		let numCodePoints: number = bytes.length/4
-		let numCodeUnits: number = 0
-		for (let i=0; i<numCodePoints; i++) {
-			let codePoint: number = bytes[4*i] << 24 | bytes[4*i+1] << 16 | bytes[4*i+2] << 8 | bytes[4*i+3]
-			if (codePoint > 0x010000) { numCodeUnits++ }
-			if (codePoint > 0x10FFFF) {  }
-			numCodeUnits++
-		}
-		let utf16Bytes: Uint8Array = new Uint8Array(numCodeUnits*2)
-		let dataView: DataView = new DataView(utf16Bytes.buffer)
-		let codeUnitIndex: number = 0
-		for (let i=0; i<numCodePoints; i++) {
-			let codePoint: number = bytes[4*i] << 24 | bytes[4*i+1] << 16 | bytes[4*i+2] << 8 | bytes[4*i+3]
-			if (codePoint > 0x10FFFF || (codePoint >= 0xD800 && codePoint <= 0xDFFF)) { throw new InvalidEncodedDataError() }
-			if (codePoint > 0x010000) {
-				codePoint -= 0x010000
-				let highSurrogate: number = (codePoint >> 10) + 0xD800
-				dataView.setUint16(codeUnitIndex*2, highSurrogate, false)
-				codeUnitIndex++
-				let lowSurrogate: number = (codePoint % 0x400) + 0xDC00
-				dataView.setUint16(codeUnitIndex*2, lowSurrogate, false)
-			} else {
-				dataView.setUint16(codeUnitIndex*2, codePoint, false)
-			}
-			codeUnitIndex++
-		}
-		return ReliableTxtDecoder.decodeUtf16(utf16Bytes, false)
-	}
 }
 
 // ----------------------------------------------------------------------
@@ -278,8 +338,8 @@ export class ReliableTxtDocument {
 		return ReliableTxtEncoder.encode(this.text, this.encoding)
 	}
 
-	setLines(...lines: string[]) {
-		this.text = ReliableTxtLines.join(...lines)
+	setLines(lines: string[]) {
+		this.text = ReliableTxtLines.join(lines)
 	}
 	
 	getLines(): string[] {
@@ -287,20 +347,20 @@ export class ReliableTxtDocument {
 	}
 	
 	getCodePoints(): number[] {
-		return ReliableTxtString.getCodePoints(this.text)
+		return Utf16String.getCodePointArray(this.text)
 	}
 	
-	setCodePoints(...codePoints: number[]) {
-		this.text = String.fromCodePoint(...codePoints)
+	setCodePoints(codePoints: number[]) {
+		this.text = Utf16String.fromCodePointArray(codePoints)
 	}
 
 	static fromBytes(bytes: Uint8Array): ReliableTxtDocument {
 		return ReliableTxtDecoder.decode(bytes)
 	}
 
-	static fromLines(...lines: string[]) {
+	static fromLines(lines: string[]) {
 		let document: ReliableTxtDocument = new ReliableTxtDocument()
-		document.setLines(...lines)
+		document.setLines(lines)
 		return document
 	}
 }

@@ -20,7 +20,11 @@ export abstract class ReliableTxtFile {
 	}
 
 	static loadSync(filePath: string): ReliableTxtDocument {
-		let buffer: Buffer = fs.readFileSync(filePath)
+		let handle: number = fs.openSync(filePath, "r")
+		let fileSize: number = fs.fstatSync(handle).size
+		let buffer: Uint8Array = new Uint8Array(fileSize)
+		let numBytesRead: number = fs.readSync(handle, buffer)
+		fs.closeSync(handle)
 		return ReliableTxtDocument.fromBytes(buffer)
 	}
 
@@ -40,7 +44,7 @@ export abstract class ReliableTxtFile {
 			let fileSize: number = fs.statSync(filePath).size
 			let isEmpty: boolean = ReliableTxtEncodingUtil.getPreambleSize(detectedEncoding) === fileSize
 			
-			let content: string = ReliableTxtLines.join(...lines)
+			let content: string = ReliableTxtLines.join(lines)
 			if (!isEmpty) { content = "\n" + content }
 			let bytes: Uint8Array = ReliableTxtEncoder.encodePart(content, detectedEncoding)
 
@@ -69,7 +73,7 @@ export abstract class ReliableTxtFile {
 	}
 
 	static writeAllLinesSync(lines: string[], filePath: string, encoding: ReliableTxtEncoding = ReliableTxtEncoding.Utf8) {
-		let content: string = ReliableTxtLines.join(...lines)
+		let content: string = ReliableTxtLines.join(lines)
 		let document: ReliableTxtDocument = new ReliableTxtDocument(content, encoding)
 		ReliableTxtFile.saveSync(document, filePath)
 	}
