@@ -61,7 +61,8 @@ export abstract class Utf16String {
 	static isValid(str: string): boolean {
 		for (let i=0; i<str.length; i++) {
 			let firstCodeUnit: number = str.charCodeAt(i)
-			if (firstCodeUnit >= 0xD800 && firstCodeUnit <= 0xDBFF) {
+			if (firstCodeUnit >= 0xD800 && firstCodeUnit <= 0xDFFF) {
+				if (firstCodeUnit >= 0xDC00) { return false }
 				i++
 				if (i >= str.length) { return false }
 				let secondCodeUnit: number = str.charCodeAt(i)
@@ -79,7 +80,8 @@ export abstract class Utf16String {
 		let count: number = 0
 		for (let i=0; i<str.length; i++) {
 			let firstCodeUnit: number = str.charCodeAt(i)
-			if (firstCodeUnit >= 0xD800 && firstCodeUnit <= 0xDBFF) {
+			if (firstCodeUnit >= 0xD800 && firstCodeUnit <= 0xDFFF) {
+				if (firstCodeUnit >= 0xDC00) { throw new InvalidUtf16StringError() }
 				i++
 				if (i >= str.length) { throw new InvalidUtf16StringError() }
 				let secondCodeUnit: number = str.charCodeAt(i)
@@ -139,7 +141,10 @@ export abstract class Utf16String {
 			if (wasHighSurrogate) {
 				if (!(codeUnit >= 0xDC00 && codeUnit <= 0xDFFF)) { throw new InvalidUtf16StringError() }
 				wasHighSurrogate = false
-			} else if (codeUnit >= 0xD800 && codeUnit <= 0xDBFF) { wasHighSurrogate = true }
+			} else if (codeUnit >= 0xD800 && codeUnit <= 0xDFFF) {
+				if (codeUnit >= 0xDC00) { throw new InvalidUtf16StringError() }
+				wasHighSurrogate = true
+			}
 			dataView.setUint16(i*2, codeUnit, littleEndian)
 		}
 		if (wasHighSurrogate) { throw new InvalidUtf16StringError() }
