@@ -1,6 +1,10 @@
-﻿import * as fs from 'fs'
+﻿/* (C) Stefan John / Stenway / ReliableTXT.com / 2022 */
+
+import * as fs from 'fs'
 import { ReliableTxtDocument, ReliableTxtEncoding, Utf16String } from "./reliabletxt.js"
 import { ReliableTxtFile } from "./reliabletxt-io.js"
+
+// ----------------------------------------------------------------------
 
 export abstract class ReliableTxtTestFiles {	
 	static generate(directoryPath: string) {

@@ -1,5 +1,9 @@
-﻿import * as fs from 'fs'
+﻿/* (C) Stefan John / Stenway / ReliableTXT.com / 2022 */
+
+import * as fs from 'fs'
 import {NoReliableTxtPreambleError, ReliableTxtDecoder, ReliableTxtDocument, ReliableTxtEncoder, ReliableTxtEncoding, ReliableTxtEncodingUtil, ReliableTxtLines} from './reliabletxt.js'
+
+// ----------------------------------------------------------------------
 
 export abstract class ReliableTxtFile {
 	static getEncodingOrNullSync(filePath: string): ReliableTxtEncoding | null {
@@ -161,7 +165,7 @@ export class SyncReliableTxtStreamWriter {
 	}
 
 	constructor(filePath: string, createWithEncoding: ReliableTxtEncoding = ReliableTxtEncoding.Utf8, append: boolean = false) {
-		if (fs.existsSync(filePath)) {
+		if (fs.existsSync(filePath) && append) {
 			this.encoding = ReliableTxtFile.getEncodingSync(filePath)
 		} else {
 			ReliableTxtFile.writeAllTextSync("", filePath, createWithEncoding)

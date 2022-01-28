@@ -1,4 +1,8 @@
-﻿import { ReliableTxtDocument } from "./reliabletxt.js"
+﻿/* (C) Stefan John / Stenway / ReliableTXT.com / 2022 */
+
+import { ReliableTxtDocument } from "./reliabletxt.js"
+
+// ----------------------------------------------------------------------
 
 export abstract class ReliableTxtDownload {
 	static getDownloadUrl(document: ReliableTxtDocument): string {
