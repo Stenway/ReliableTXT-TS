@@ -1,7 +1,7 @@
 ﻿/* (C) Stefan John / Stenway / ReliableTXT.com / 2022 */
 
 import * as fs from 'fs'
-import {NoReliableTxtPreambleError, ReliableTxtDecoder, ReliableTxtDocument, ReliableTxtEncoder, ReliableTxtEncoding, ReliableTxtEncodingUtil, ReliableTxtLines} from './reliabletxt.js'
+import {NoReliableTxtPreambleError, ReliableTxtDecoder, ReliableTxtDocument, ReliableTxtEncoder, ReliableTxtEncoding, ReliableTxtEncodingUtil, ReliableTxtLines, Utf16String} from './reliabletxt.js'
 
 // ----------------------------------------------------------------------
 
@@ -157,9 +157,9 @@ export class SyncReliableTxtStreamReader {
 
 export class SyncReliableTxtStreamWriter {
 	private handle: number | null
-	private encoding: ReliableTxtEncoding
+	readonly encoding: ReliableTxtEncoding
 	private isEmpty: boolean
-
+	
 	get isClosed(): boolean {
 		return this.handle === null
 	}
@@ -190,6 +190,12 @@ export class SyncReliableTxtStreamWriter {
 		this.write(line)
 	}
 
+	writeLines(lines: string[]) {
+		for (let line of lines) {
+			this.writeLine(line)
+		}
+	}
+
 	private validateIsOpen() {
 		if (this.isClosed) { throw new Error("Stream writer is closed") }
 	}
@@ -199,5 +205,51 @@ export class SyncReliableTxtStreamWriter {
 			fs.closeSync(this.handle!)
 			this.handle = null
 		}
+	}
+}
+
+// ----------------------------------------------------------------------
+
+export class ReverseLineIterator {
+	private handle: number | null
+	private index: number
+	private encoding: ReliableTxtEncoding
+	private buffer: Uint8Array = new Uint8Array(128)
+			
+	constructor(filePath: string, encoding: ReliableTxtEncoding) {
+		this.handle = fs.openSync(filePath, "r")
+		this.index = fs.fstatSync(this.handle).size-1
+		this.encoding = encoding
+		if (encoding !== ReliableTxtEncoding.Utf8) { throw new Error("Not implemented") }
+	}
+	
+	getLine(): string {
+		if (this.handle === null) { throw new Error("File handle closed") }
+		
+		let start: number = Math.max(this.index - this.buffer.length + 1, 0)
+		let length: number = this.index - start + 1
+		let numBytesRead: number = fs.readSync(this.handle, this.buffer, 0, length, start)
+		
+		if (numBytesRead !== length) { throw new Error("Not supported") }
+		for (let i=length-1; i>=0; i--) {
+			let currentByte: number = this.buffer[i]
+			if (currentByte === 0x0A) {
+				this.index = start + i - 1
+				let sliceStart: number = i+1
+				let sliceLength: number = length-i-1
+				let lineBytes: Uint8Array = this.buffer.slice(sliceStart, sliceStart+sliceLength)
+				return Utf16String.fromUtf8Bytes(lineBytes, false)
+			}
+		}
+		throw new Error("Not supported")
+	}
+
+	getPosition(): number {
+		return this.index
+	}
+
+	close() {
+		if (this.handle === null) { return }
+		fs.closeSync(this.handle)
 	}
 }
