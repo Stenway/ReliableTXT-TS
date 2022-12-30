@@ -1,14 +1,14 @@
 {
   "name": "@stenway/reliabletxt",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Stefan John / Stenway / ReliableTXT.com / 2022",
   "homepage": "https://www.reliabletxt.com",
   "repository": "github:Stenway/ReliableTXT-TS",
   "bugs": {
     "url": "https://github.com/Stenway/ReliableTXT-TS/issues"
   },
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
   "files": [
     "/dist/src"
   ],
