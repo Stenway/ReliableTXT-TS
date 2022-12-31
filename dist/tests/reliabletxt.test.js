@@ -667,6 +667,17 @@ describe("ReliableTxtDocument.setLines + getLines + fromLines", () => {
         expect(document.getLines()).toEqual([""]);
     });
 });
+describe("ReliableTxtDocument.fromLines Encoding", () => {
+    test.each([
+        [src_1.ReliableTxtEncoding.Utf8],
+        [src_1.ReliableTxtEncoding.Utf16],
+        [src_1.ReliableTxtEncoding.Utf16Reverse],
+        [src_1.ReliableTxtEncoding.Utf32],
+    ])("Given %p returns %p", (encoding) => {
+        const fromDocument = src_1.ReliableTxtDocument.fromLines([], encoding);
+        expect(fromDocument.encoding).toEqual(encoding);
+    });
+});
 describe("ReliableTxtDocument.setCodePoints + getCodePoints + fromCodePoints", () => {
     test.each([
         [[], ""],
@@ -682,6 +693,17 @@ describe("ReliableTxtDocument.setCodePoints + getCodePoints + fromCodePoints", (
         const fromDocument = src_1.ReliableTxtDocument.fromCodePoints(input);
         expect(fromDocument.text).toEqual(output);
         expect(fromDocument.getCodePoints()).toEqual(input);
+    });
+});
+describe("ReliableTxtDocument.fromCodePoints Encoding", () => {
+    test.each([
+        [src_1.ReliableTxtEncoding.Utf8],
+        [src_1.ReliableTxtEncoding.Utf16],
+        [src_1.ReliableTxtEncoding.Utf16Reverse],
+        [src_1.ReliableTxtEncoding.Utf32],
+    ])("Given %p returns %p", (encoding) => {
+        const fromDocument = src_1.ReliableTxtDocument.fromCodePoints([], encoding);
+        expect(fromDocument.encoding).toEqual(encoding);
     });
 });
 //# sourceMappingURL=reliabletxt.test.js.map

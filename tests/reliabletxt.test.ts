@@ -915,6 +915,21 @@ describe("ReliableTxtDocument.setLines + getLines + fromLines", () => {
 	})
 })
 
+describe("ReliableTxtDocument.fromLines Encoding", () => {
+	test.each([
+		[ReliableTxtEncoding.Utf8],
+		[ReliableTxtEncoding.Utf16],
+		[ReliableTxtEncoding.Utf16Reverse],
+		[ReliableTxtEncoding.Utf32],
+	])(
+		"Given %p returns %p",
+		(encoding) => {
+			const fromDocument = ReliableTxtDocument.fromLines([], encoding)
+			expect(fromDocument.encoding).toEqual(encoding)
+		}
+	)
+})
+
 describe("ReliableTxtDocument.setCodePoints + getCodePoints + fromCodePoints", () => {
 	test.each([
 		[[], ""],
@@ -933,6 +948,21 @@ describe("ReliableTxtDocument.setCodePoints + getCodePoints + fromCodePoints", (
 			const fromDocument = ReliableTxtDocument.fromCodePoints(input)
 			expect(fromDocument.text).toEqual(output)
 			expect(fromDocument.getCodePoints()).toEqual(input)
+		}
+	)
+})
+
+describe("ReliableTxtDocument.fromCodePoints Encoding", () => {
+	test.each([
+		[ReliableTxtEncoding.Utf8],
+		[ReliableTxtEncoding.Utf16],
+		[ReliableTxtEncoding.Utf16Reverse],
+		[ReliableTxtEncoding.Utf32],
+	])(
+		"Given %p returns %p",
+		(encoding) => {
+			const fromDocument = ReliableTxtDocument.fromCodePoints([], encoding)
+			expect(fromDocument.encoding).toEqual(encoding)
 		}
 	)
 })

@@ -54,7 +54,7 @@ export declare class ReliableTxtDocument {
     getCodePoints(): number[];
     setCodePoints(codePoints: number[]): void;
     static fromBytes(bytes: Uint8Array): ReliableTxtDocument;
-    static fromLines(lines: string[]): ReliableTxtDocument;
-    static fromCodePoints(codePoints: number[]): ReliableTxtDocument;
+    static fromLines(lines: string[], encoding?: ReliableTxtEncoding): ReliableTxtDocument;
+    static fromCodePoints(codePoints: number[], encoding?: ReliableTxtEncoding): ReliableTxtDocument;
 }
 //# sourceMappingURL=reliabletxt.d.ts.map

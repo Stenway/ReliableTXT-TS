@@ -415,13 +415,13 @@ class ReliableTxtDocument {
     static fromBytes(bytes) {
         return ReliableTxtDecoder.decode(bytes);
     }
-    static fromLines(lines) {
-        const document = new ReliableTxtDocument();
+    static fromLines(lines, encoding = ReliableTxtEncoding.Utf8) {
+        const document = new ReliableTxtDocument("", encoding);
         document.setLines(lines);
         return document;
     }
-    static fromCodePoints(codePoints) {
-        const document = new ReliableTxtDocument();
+    static fromCodePoints(codePoints, encoding = ReliableTxtEncoding.Utf8) {
+        const document = new ReliableTxtDocument("", encoding);
         document.setCodePoints(codePoints);
         return document;
     }

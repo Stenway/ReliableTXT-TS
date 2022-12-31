@@ -362,14 +362,14 @@ export class ReliableTxtDocument {
 		return ReliableTxtDecoder.decode(bytes)
 	}
 
-	static fromLines(lines: string[]) {
-		const document: ReliableTxtDocument = new ReliableTxtDocument()
+	static fromLines(lines: string[], encoding: ReliableTxtEncoding = ReliableTxtEncoding.Utf8) {
+		const document: ReliableTxtDocument = new ReliableTxtDocument("", encoding)
 		document.setLines(lines)
 		return document
 	}
 
-	static fromCodePoints(codePoints: number[]) {
-		const document: ReliableTxtDocument = new ReliableTxtDocument()
+	static fromCodePoints(codePoints: number[], encoding: ReliableTxtEncoding = ReliableTxtEncoding.Utf8) {
+		const document: ReliableTxtDocument = new ReliableTxtDocument("", encoding)
 		document.setCodePoints(codePoints)
 		return document
 	}
