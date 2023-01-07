@@ -131,8 +131,8 @@ let base64str = Base64String.fromText("abc", ReliableTxtEncoding.Utf16)
 
 Here are some examples using the UTF-8 encoding. An empty string is represented with '77u/' because the UTF-8 BOM is 3 bytes long and that's its Base64 representation:
 ```
-""   		　->   Base64|77u/|
-"Many"		　->   Base64|77u/TWFueQ==|
+""          　->   Base64|77u/|
+"Many"      　->   Base64|77u/TWFueQ==|
 "a¥ßä€東𝄞"    ->   Base64|77u/YcKlw5/DpOKCrOadsfCdhJ4=|
 ```
 
