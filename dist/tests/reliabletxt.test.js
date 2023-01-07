@@ -398,6 +398,7 @@ describe("Utf16String.fromUtf16Bytes LittleEndian", () => {
         expect(src_1.Utf16String.fromUtf16Bytes(input, true, skipFirstBom)).toEqual(output);
     });
     // TODO - gives a TypeError instead of a StringDecodingError when running with Jest
+    // see https://github.com/facebook/jest/issues/2549 and https://github.com/nodejs/node/issues/31852 and https://backend.cafe/should-you-use-jest-as-a-testing-library
     /*test.each([
         new Uint8Array([0xFF])
     ])(
@@ -704,6 +705,201 @@ describe("ReliableTxtDocument.fromCodePoints Encoding", () => {
     ])("Given %p returns %p", (encoding) => {
         const fromDocument = src_1.ReliableTxtDocument.fromCodePoints([], encoding);
         expect(fromDocument.encoding).toEqual(encoding);
+    });
+});
+describe("ReliableTxtDocument.toBase64String + fromBase64String", () => {
+    test.each([
+        [""],
+        ["a"],
+        ["a~¥»½¿ßäïœ€東𝄞𠀇"],
+    ])("Given %p", (input) => {
+        for (let i = 0; i < 3; i++) {
+            const encoding = i;
+            const document = new src_1.ReliableTxtDocument(input, encoding);
+            expect(document.encoding).toEqual(encoding);
+            const base64Str = document.toBase64String();
+            expect(base64Str.startsWith("Base64|")).toEqual(true);
+            expect(base64Str.endsWith("|")).toEqual(true);
+            const fromDocument = src_1.ReliableTxtDocument.fromBase64String(base64Str);
+            expect(fromDocument.text).toEqual(input);
+            expect(fromDocument.encoding).toEqual(encoding);
+        }
+    });
+});
+describe("ReliableTxtDocument.toBase64String", () => {
+    test.each([
+        ["", src_1.ReliableTxtEncoding.Utf8, "Base64|77u/|"],
+        ["Many hands make light work.", src_1.ReliableTxtEncoding.Utf8, "Base64|77u/TWFueSBoYW5kcyBtYWtlIGxpZ2h0IHdvcmsu|"],
+        ["\u0000", src_1.ReliableTxtEncoding.Utf8, "Base64|77u/AA==|"],
+        ["Man", src_1.ReliableTxtEncoding.Utf8, "Base64|77u/TWFu|"],
+        ["a¥ßä€東𝄞", src_1.ReliableTxtEncoding.Utf8, "Base64|77u/YcKlw5/DpOKCrOadsfCdhJ4=|"],
+        ["Man", src_1.ReliableTxtEncoding.Utf16, "Base64|/v8ATQBhAG4=|"],
+        ["Man", src_1.ReliableTxtEncoding.Utf16Reverse, "Base64|//5NAGEAbgA=|"],
+        ["Man", src_1.ReliableTxtEncoding.Utf32, "Base64|AAD+/wAAAE0AAABhAAAAbg==|"],
+    ])("Given %p and %p returns %p", (input1, input2, output) => {
+        const document = new src_1.ReliableTxtDocument(input1, input2);
+        expect(document.toBase64String()).toEqual(output);
+    });
+});
+describe("ReliableTxtDocument.fromBase64String", () => {
+    test.each([
+        ["Base64|77u/|", "", src_1.ReliableTxtEncoding.Utf8],
+        ["Base64|77u/AA==|", "\u0000", src_1.ReliableTxtEncoding.Utf8],
+        ["Base64|77u/TWFu|", "Man", src_1.ReliableTxtEncoding.Utf8],
+        ["Base64|77u/8J2Eng==|", "𝄞", src_1.ReliableTxtEncoding.Utf8],
+        ["Base64|/v8ATQBhAG4=|", "Man", src_1.ReliableTxtEncoding.Utf16],
+        ["Base64|//5NAGEAbgA=|", "Man", src_1.ReliableTxtEncoding.Utf16Reverse],
+        ["Base64|AAD+/wAAAE0AAABhAAAAbg==|", "Man", src_1.ReliableTxtEncoding.Utf32],
+    ])("Given %p returns %p and %p", (input, output1, output2) => {
+        const fromDocument = src_1.ReliableTxtDocument.fromBase64String(input);
+        expect(fromDocument.text).toEqual(output1);
+        expect(fromDocument.encoding).toEqual(output2);
+    });
+    test.each([
+        ["Base64||"],
+        ["Base64|TWFu|"],
+        ["BASE64|77u/TWFu|"],
+        ["77u/TWFu"],
+    ])("Given %p throws", (input) => {
+        expect(() => src_1.ReliableTxtDocument.fromBase64String(input)).toThrow();
+    });
+});
+// ----------------------------------------------------------------------
+test("InvalidBase64StringError", () => {
+    expect(new src_1.InvalidBase64StringError().message).toEqual("Invalid Base64 string");
+});
+// ----------------------------------------------------------------------
+describe("Base64String.rawFromBytes + rawToBytes", () => {
+    test.each([
+        [[], ""],
+        [[0x4d], "TQ=="],
+        [[0x4d, 0x61], "TWE="],
+        [[0x4d, 0x61, 0x6e], "TWFu"],
+        [[0x4d, 0x61, 0x6e, 0x4d], "TWFuTQ=="],
+        [[0x0], "AA=="],
+        [[0x0, 0x0], "AAA="],
+        [[0x0, 0x0, 0x0], "AAAA"],
+        [[0x0, 0x0, 0x1], "AAAB"],
+        [[0x20, 0x21, 0x22], "ICEi"],
+        [[0xA5, 0xDF], "pd8="],
+        [[0xFF], "/w=="],
+        [[0xFF, 0xFF], "//8="],
+        [[0xFF, 0xFF, 0xFF], "////"],
+        [[0xFF, 0xFF, 0xFE], "///+"],
+        [[0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF], "////////"],
+    ])("Given %p returns %p", (input, output) => {
+        const bytes = new Uint8Array(input);
+        const base64Str = src_1.Base64String.rawFromBytes(bytes);
+        expect(base64Str).toEqual(output);
+        expect(src_1.Base64String.rawToBytes(base64Str)).toEqual(bytes);
+    });
+});
+describe("Base64String.rawToBytes", () => {
+    test.each([
+        ["a"],
+        ["&aaa"],
+        ["ßaaa"],
+        ["&aa="],
+        ["ßaa="],
+        ["&a=="],
+        ["ßa=="],
+    ])("Given %p throws", (input) => {
+        expect(() => src_1.Base64String.rawToBytes(input)).toThrow();
+    });
+});
+test("Base64String.rawFromBytes + rawToBytes 256", () => {
+    const byteValues = [...Array(256).keys()];
+    expect(byteValues.length).toEqual(256);
+    const bytes = new Uint8Array(byteValues);
+    const base64Str = src_1.Base64String.rawFromBytes(bytes);
+    expect(base64Str).toEqual("AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+P0BBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWltcXV5fYGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6e3x9fn+AgYKDhIWGh4iJiouMjY6PkJGSk5SVlpeYmZqbnJ2en6ChoqOkpaanqKmqq6ytrq+wsbKztLW2t7i5uru8vb6/wMHCw8TFxsfIycrLzM3Oz9DR0tPU1dbX2Nna29zd3t/g4eLj5OXm5+jp6uvs7e7v8PHy8/T19vf4+fr7/P3+/w==");
+    expect(src_1.Base64String.rawToBytes(base64Str)).toEqual(bytes);
+});
+describe("Base64String.rawFromText + rawToText", () => {
+    test.each([
+        ["", src_1.ReliableTxtEncoding.Utf8, "77u/"],
+        ["M", src_1.ReliableTxtEncoding.Utf8, "77u/TQ=="],
+        ["Ma", src_1.ReliableTxtEncoding.Utf8, "77u/TWE="],
+        ["Man", src_1.ReliableTxtEncoding.Utf8, "77u/TWFu"],
+        ["Many", src_1.ReliableTxtEncoding.Utf8, "77u/TWFueQ=="],
+        ["\uFEFF", src_1.ReliableTxtEncoding.Utf8, "77u/77u/"],
+        ["Many hands make light work.", src_1.ReliableTxtEncoding.Utf8, "77u/TWFueSBoYW5kcyBtYWtlIGxpZ2h0IHdvcmsu"],
+        ["", src_1.ReliableTxtEncoding.Utf16, "/v8="],
+        ["M", src_1.ReliableTxtEncoding.Utf16, "/v8ATQ=="],
+        ["Ma", src_1.ReliableTxtEncoding.Utf16, "/v8ATQBh"],
+        ["Man", src_1.ReliableTxtEncoding.Utf16, "/v8ATQBhAG4="],
+        ["\uFEFF", src_1.ReliableTxtEncoding.Utf16, "/v/+/w=="],
+        ["", src_1.ReliableTxtEncoding.Utf16Reverse, "//4="],
+        ["M", src_1.ReliableTxtEncoding.Utf16Reverse, "//5NAA=="],
+        ["Ma", src_1.ReliableTxtEncoding.Utf16Reverse, "//5NAGEA"],
+        ["Man", src_1.ReliableTxtEncoding.Utf16Reverse, "//5NAGEAbgA="],
+        ["\uFEFF", src_1.ReliableTxtEncoding.Utf16Reverse, "//7//g=="],
+        ["", src_1.ReliableTxtEncoding.Utf32, "AAD+/w=="],
+        ["M", src_1.ReliableTxtEncoding.Utf32, "AAD+/wAAAE0="],
+        ["Ma", src_1.ReliableTxtEncoding.Utf32, "AAD+/wAAAE0AAABh"],
+        ["Man", src_1.ReliableTxtEncoding.Utf32, "AAD+/wAAAE0AAABhAAAAbg=="],
+        ["\uFEFF", src_1.ReliableTxtEncoding.Utf32, "AAD+/wAA/v8="],
+    ])("Given %p returns %p", (input1, input2, output) => {
+        const base64Str = src_1.Base64String.rawFromText(input1, input2);
+        expect(base64Str).toEqual(output);
+        expect(src_1.Base64String.rawToText(base64Str)).toEqual(input1);
+    });
+    test("Without encoding", () => {
+        const base64Str = src_1.Base64String.rawFromText("Man");
+        expect(base64Str).toEqual("77u/TWFu");
+        expect(src_1.Base64String.rawToText(base64Str)).toEqual("Man");
+    });
+});
+describe("Base64String.fromBytes + toBytes", () => {
+    test.each([
+        [[], "Base64||"],
+        [[0x4d], "Base64|TQ==|"],
+        [[0x4d, 0x61], "Base64|TWE=|"],
+        [[0x4d, 0x61, 0x6e], "Base64|TWFu|"],
+        [[0x4d, 0x61, 0x6e, 0x4d], "Base64|TWFuTQ==|"],
+        [[0x0], "Base64|AA==|"],
+        [[0x0, 0x0], "Base64|AAA=|"],
+        [[0x0, 0x0, 0x0], "Base64|AAAA|"],
+        [[0x0, 0x0, 0x1], "Base64|AAAB|"],
+        [[0x20, 0x21, 0x22], "Base64|ICEi|"],
+        [[0xA5, 0xDF], "Base64|pd8=|"],
+        [[0xFF], "Base64|/w==|"],
+        [[0xFF, 0xFF], "Base64|//8=|"],
+        [[0xFF, 0xFF, 0xFF], "Base64|////|"],
+        [[0xFF, 0xFF, 0xFE], "Base64|///+|"],
+        [[0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF], "Base64|////////|"],
+    ])("Given %p returns %p", (input, output) => {
+        const bytes = new Uint8Array(input);
+        const base64Str = src_1.Base64String.fromBytes(bytes);
+        expect(base64Str).toEqual(output);
+        expect(src_1.Base64String.toBytes(base64Str)).toEqual(bytes);
+    });
+});
+describe("Base64String.toBytes", () => {
+    test.each([
+        ["AAAA"],
+        ["BASE64|AAAA|"],
+        ["Base64|AAAA"],
+        ["Base64|"],
+    ])("Given %p throws", (input) => {
+        expect(() => src_1.Base64String.toBytes(input)).toThrow();
+    });
+});
+describe("Base64String.fromText + toText", () => {
+    test.each([
+        ["Man", src_1.ReliableTxtEncoding.Utf8, "Base64|77u/TWFu|"],
+        ["Man", src_1.ReliableTxtEncoding.Utf16, "Base64|/v8ATQBhAG4=|"],
+        ["Man", src_1.ReliableTxtEncoding.Utf16Reverse, "Base64|//5NAGEAbgA=|"],
+        ["Man", src_1.ReliableTxtEncoding.Utf32, "Base64|AAD+/wAAAE0AAABhAAAAbg==|"],
+    ])("Given %p returns %p", (input1, input2, output) => {
+        const base64Str = src_1.Base64String.fromText(input1, input2);
+        expect(base64Str).toEqual(output);
+        expect(src_1.Base64String.toText(base64Str)).toEqual(input1);
+    });
+    test("Without encoding", () => {
+        const base64Str = src_1.Base64String.fromText("Man");
+        expect(base64Str).toEqual("Base64|77u/TWFu|");
+        expect(src_1.Base64String.toText(base64Str)).toEqual("Man");
     });
 });
 //# sourceMappingURL=reliabletxt.test.js.map

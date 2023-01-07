@@ -44,6 +44,21 @@ export declare abstract class ReliableTxtDecoder {
     static decode(bytes: Uint8Array): ReliableTxtDocument;
     static decodePart(bytes: Uint8Array, encoding: ReliableTxtEncoding): string;
 }
+export declare class InvalidBase64StringError extends Error {
+    constructor();
+}
+export declare abstract class Base64String {
+    private static encoderLookup;
+    private static decoderLookup;
+    static rawFromBytes(bytes: Uint8Array): string;
+    static rawFromText(text: string, encoding?: ReliableTxtEncoding): string;
+    static fromBytes(bytes: Uint8Array): string;
+    static fromText(text: string, encoding?: ReliableTxtEncoding): string;
+    static rawToBytes(base64Str: string): Uint8Array;
+    static rawToText(base64Str: string): string;
+    static toBytes(base64Str: string): Uint8Array;
+    static toText(base64Str: string): string;
+}
 export declare class ReliableTxtDocument {
     text: string;
     encoding: ReliableTxtEncoding;
@@ -53,8 +68,10 @@ export declare class ReliableTxtDocument {
     setLines(lines: string[]): void;
     getCodePoints(): number[];
     setCodePoints(codePoints: number[]): void;
+    toBase64String(): string;
     static fromBytes(bytes: Uint8Array): ReliableTxtDocument;
     static fromLines(lines: string[], encoding?: ReliableTxtEncoding): ReliableTxtDocument;
     static fromCodePoints(codePoints: number[], encoding?: ReliableTxtEncoding): ReliableTxtDocument;
+    static fromBase64String(base64Str: string): ReliableTxtDocument;
 }
 //# sourceMappingURL=reliabletxt.d.ts.map
