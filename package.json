@@ -34,7 +34,8 @@
     "unicode",
     "base64",
     "bytes",
-    "binary-file"
+    "binary-file",
+    "reliable-base64"
   ],
   "author": "Stefan John",
   "license": "MIT",

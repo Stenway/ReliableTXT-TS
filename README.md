@@ -100,3 +100,58 @@ try {
 
 console.log("ReliableTXT usage")
 ```
+
+## Reliable Base64 Encoding/Decoding
+
+From bytes to Base64 string and reverse:
+```ts
+let bytes = new Uint8Array([0x4D, 0x61, 0x6E])
+let base64str = Base64String.fromBytes(bytes)
+console.log(base64str)
+let returnedBytes = Base64String.toBytes(base64str)
+console.log(returnedBytes)
+```
+
+From text to Base64 string and reverse:
+```ts
+let text = "a¥ßä€東𝄞"
+let base64str = Base64String.fromText(text)
+console.log(base64str)
+let returnedText = Base64String.toText(base64str)
+console.log(returnedText)
+console.log(text === returnedText)
+```
+Uses the UTF-8 encoding with BOM to convert the UTF-16 JavaScript string to a binary representation and thus fully supports all Unicode characters, like the supplementary character '𝄞'. You can also specify UTF-16, UTF-16 Reverse and UTF-32 as encoding.
+
+```ts
+let base64str = Base64String.fromText("abc", ReliableTxtEncoding.Utf16)
+```
+
+**Reliable Base64** strings have the prefix 'Base64|' and suffix '|'. Padding characters '=' are required. The alphabet is: ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz0123456789+/
+
+Here are some examples using the UTF-8 encoding. An empty string is represented with '77u/' because the UTF-8 BOM is 3 bytes long and that's its Base64 representation:
+```
+""   		　->   Base64|77u/|
+"Many"		　->   Base64|77u/TWFueQ==|
+"a¥ßä€東𝄞"    ->   Base64|77u/YcKlw5/DpOKCrOadsfCdhJ4=|
+```
+
+The ReliableTxtDocument class has the comfort methods toBase64String and fromBase64String. The chosen encoding of the ReliableTxtDocument is preserved:
+```ts
+let document = new ReliableTxtDocument("abc")
+let base64Str = document.toBase64String()
+let document2 = ReliableTxtDocument.fromBase64String(base64Str)
+console.log(document.text === document2.text)
+console.log(document.encoding === document2.encoding)
+```
+
+If you want to use the Base64 encoder and decoder without the reliable prefix 'Base64|' and suffix '|', use the rawToBytes, rawFromBytes, rawFromText, and rawToText methods.
+
+```ts
+let text = "a¥ßä€東𝄞"
+let base64str = Base64String.rawFromText(text)
+console.log(base64str)
+let returnedText = Base64String.rawToText(base64str)
+console.log(returnedText)
+console.log(text === returnedText)
+```
