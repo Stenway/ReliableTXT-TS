@@ -36,6 +36,26 @@ describe("ReliableTxtEncodingUtil.getPreambleSize", () => {
 
 // ----------------------------------------------------------------------
 
+describe("ReliableTxtEncodingUtil.getPreambleBytes", () => {
+	test.each([
+		[ReliableTxtEncoding.Utf8, [0xEF, 0xBB, 0xBF]],
+		[ReliableTxtEncoding.Utf16, [0xFE, 0xFF]],
+		[ReliableTxtEncoding.Utf16Reverse, [0xFF, 0xFE]],
+		[ReliableTxtEncoding.Utf32, [0x0, 0x0, 0xFE, 0xFF]],
+	])(
+		"Given %p returns %p",
+		(input, output) => {
+			expect(ReliableTxtEncodingUtil.getPreambleBytes(input)).toEqual(new Uint8Array(output))
+		}
+	)
+
+	test("Invalid encoding", () => {
+		expect(() => ReliableTxtEncodingUtil.getPreambleBytes(4)).toThrow(RangeError)
+	})
+})
+
+// ----------------------------------------------------------------------
+
 describe("ReliableTxtLines.join", () => {
 	test.each([
 		[[], ""],
@@ -49,8 +69,10 @@ describe("ReliableTxtLines.join", () => {
 		[["Line1", "", "Line3"], "Line1\n\nLine3"],
 		[["Line1", "Line2", ""], "Line1\nLine2\n"],
 		[["Line1\r", "Line2"], "Line1\r\nLine2"],
+		[["\u0000", "\u0000"], "\u0000\n\u0000"],
+		[["𝄞", "𝄞"], "𝄞\n𝄞"],
 	])(
-		"Given %p returns %p",
+		"Given %j returns %j",
 		(input, output) => {
 			expect(ReliableTxtLines.join(input)).toEqual(output)
 		}
@@ -99,6 +121,7 @@ describe("Utf16String.isValid", () => {
 	test.each([
 		["", true],
 		["a", true],
+		["\u0000", true],
 		["\uD800", false],
 		["\uD800a", false],
 		["\uDC00", false],
@@ -108,7 +131,7 @@ describe("Utf16String.isValid", () => {
 		["a\uD800\uDC00", true],
 		["a\uD800\uDC00a", true],
 	])(
-		"Given %p returns %p",
+		"Given %j returns %p",
 		(input, output) => {
 			expect(Utf16String.isValid(input)).toEqual(output)
 		}
@@ -147,12 +170,13 @@ describe("Utf16String.getCodePointCount", () => {
 	test.each([
 		["", 0],
 		["a", 1],
+		["\u0000", 1],
 		["\uD800\uDC00", 1],
 		["\uD800\uDC00a", 2],
 		["a\uD800\uDC00", 2],
 		["a\uD800\uDC00a", 3],
 	])(
-		"Given %p returns %p",
+		"Given %j returns %p",
 		(input, output) => {
 			expect(Utf16String.getCodePointCount(input)).toEqual(output)
 		}
@@ -203,10 +227,11 @@ describe("Utf16String.getCodePoints", () => {
 	test.each([
 		["", new Uint32Array([])],
 		["a", new Uint32Array([0x61])],
+		["\u0000", new Uint32Array([0x0])],
 		["a\u6771", new Uint32Array([0x61, 0x6771])],
 		["\uD834\uDD1E", new Uint32Array([0x1D11E])],
 	])(
-		"Given %p returns %p",
+		"Given %j returns %p",
 		(input, output) => {
 			expect(Utf16String.getCodePoints(input)).toEqual(output)
 		}
@@ -235,22 +260,14 @@ describe("Utf16String.toUtf8Bytes", () => {
 		["\uFEFF\uFEFF", new Uint8Array([0xEF, 0xBB, 0xBF, 0xEF, 0xBB, 0xBF])],
 		["a\u6771", new Uint8Array([0x61, 0xE6, 0x9D, 0xB1])],
 		["\uD834\uDD1E", new Uint8Array([0xF0, 0x9D, 0x84, 0x9E])],
+		["\u0000", new Uint8Array([0x0])],
 	])(
-		"Given %p returns %p",
+		"Given %j returns %p",
 		(input, output) => {
 			expect(Utf16String.toUtf8Bytes(input)).toEqual(output)
 		}
 	)
-
-	test.each([
-		["\0", new Uint8Array([0x0])],
-	])(
-		"Zero test",
-		(input, output) => {
-			expect(Utf16String.toUtf8Bytes(input)).toEqual(output)
-		}
-	)
-
+	
 	test.each([
 		"\uD800",
 		"\uD800a",
@@ -272,17 +289,9 @@ describe("Utf16String.toUtf16Bytes", () => {
 		["\uFEFF", new Uint8Array([0xFE, 0xFF])],
 		["\uFEFF\uFEFF", new Uint8Array([0xFE, 0xFF, 0xFE, 0xFF])],
 		["\uD834\uDD1E", new Uint8Array([0xD8, 0x34, 0xDD, 0x1E])],
+		["\u0000", new Uint8Array([0x0, 0x0])],
 	])(
-		"Given %p returns %p",
-		(input, output) => {
-			expect(Utf16String.toUtf16Bytes(input)).toEqual(output)
-		}
-	)
-
-	test.each([
-		["\0", new Uint8Array([0x0, 0x0])],
-	])(
-		"Zero test",
+		"Given %j returns %p",
 		(input, output) => {
 			expect(Utf16String.toUtf16Bytes(input)).toEqual(output)
 		}
@@ -309,17 +318,9 @@ describe("Utf16String.toUtf16Bytes LittleEndian", () => {
 		["\uFEFF", new Uint8Array([0xFF, 0xFE])],
 		["\uFEFF\uFEFF", new Uint8Array([0xFF, 0xFE, 0xFF, 0xFE])],
 		["\uD834\uDD1E", new Uint8Array([0x34, 0xD8, 0x1E, 0xDD])],
+		["\u0000", new Uint8Array([0x0, 0x0])],
 	])(
-		"Given %p returns %p",
-		(input, output) => {
-			expect(Utf16String.toUtf16Bytes(input, true)).toEqual(output)
-		}
-	)
-
-	test.each([
-		["\0", new Uint8Array([0x0, 0x0])],
-	])(
-		"Zero test",
+		"Given %j returns %p",
 		(input, output) => {
 			expect(Utf16String.toUtf16Bytes(input, true)).toEqual(output)
 		}
@@ -346,17 +347,9 @@ describe("Utf16String.toUtf32Bytes", () => {
 		["\uFEFF", new Uint8Array([0x0, 0x0, 0xFE, 0xFF])],
 		["\uFEFF\uFEFF", new Uint8Array([0x0, 0x0, 0xFE, 0xFF, 0x0, 0x0, 0xFE, 0xFF])],
 		["\uD834\uDD1E", new Uint8Array([0x0, 0x01, 0xD1, 0x1E])],
+		["\u0000", new Uint8Array([0x0, 0x0, 0x0, 0x0])],
 	])(
-		"Given %p returns %p",
-		(input, output) => {
-			expect(Utf16String.toUtf32Bytes(input)).toEqual(output)
-		}
-	)
-
-	test.each([
-		["\0", new Uint8Array([0x0, 0x0, 0x0, 0x0])],
-	])(
-		"Zero test",
+		"Given %j returns %p",
 		(input, output) => {
 			expect(Utf16String.toUtf32Bytes(input)).toEqual(output)
 		}
@@ -383,17 +376,9 @@ describe("Utf16String.toUtf32Bytes LittleEndian", () => {
 		["\uFEFF", new Uint8Array([0xFF, 0xFE, 0x0, 0x0])],
 		["\uFEFF\uFEFF", new Uint8Array([0xFF, 0xFE, 0x0, 0x0, 0xFF, 0xFE, 0x0, 0x0])],
 		["\uD834\uDD1E", new Uint8Array([0x1E, 0xD1, 0x01, 0x0])],
-	])(
-		"Given %p returns %p",
-		(input, output) => {
-			expect(Utf16String.toUtf32Bytes(input, true)).toEqual(output)
-		}
-	)
-
-	test.each([
 		["\0", new Uint8Array([0x0, 0x0, 0x0, 0x0])],
 	])(
-		"Zero test",
+		"Given %j returns %p",
 		(input, output) => {
 			expect(Utf16String.toUtf32Bytes(input, true)).toEqual(output)
 		}
@@ -422,31 +407,16 @@ describe("Utf16String.fromUtf8Bytes", () => {
 		[new Uint8Array([0xEF, 0xBB, 0xBF, 0xEF, 0xBB, 0xBF]), "\uFEFF\uFEFF"],
 		[new Uint8Array([0x61, 0xE6, 0x9D, 0xB1]), "a\u6771"],
 		[new Uint8Array([0xF0, 0x9D, 0x84, 0x9E]), "\uD834\uDD1E"],
-	])(
-		"Given %p returns %p",
-		(input, output) => {
-			expect(Utf16String.fromUtf8Bytes(input)).toEqual(output)
-		}
-	)
-
-	test.each([
 		[new Uint8Array([0x0]), "\0"],
 	])(
-		"Zero test",
+		"Given %p returns %j",
 		(input, output) => {
 			expect(Utf16String.fromUtf8Bytes(input)).toEqual(output)
 		}
 	)
 
 	// TODO - gives a TypeError instead of a StringDecodingError when running with Jest
-	/*test.each([
-		new Uint8Array([0xFF])
-	])(
-		"Given %p throws",
-		(input) => {
-			expect(() => Utf16String.fromUtf8Bytes(input)).toThrow(StringDecodingError)
-		}
-	)*/
+	
 	test.each([
 		new Uint8Array([0xFF])
 	])(
@@ -464,18 +434,10 @@ describe("Utf16String.fromUtf8Bytes SkipFirstBom", () => {
 		[new Uint8Array([0xEF, 0xBB, 0xBF]), ""],
 		[new Uint8Array([0xEF, 0xBB, 0xBF, 0xEF, 0xBB, 0xBF]), "\uFEFF"],
 		[new Uint8Array([0xEF, 0xBB, 0xBF, 0x61]), "a"],
-	])(
-		"Given %p returns %p",
-		(input, output) => {
-			expect(Utf16String.fromUtf8Bytes(input, true)).toEqual(output)
-		}
-	)
-
-	test.each([
 		[new Uint8Array([0x0]), "\0"],
 		[new Uint8Array([0xEF, 0xBB, 0xBF, 0x0]), "\0"],
 	])(
-		"Zero test",
+		"Given %p returns %j",
 		(input, output) => {
 			expect(Utf16String.fromUtf8Bytes(input, true)).toEqual(output)
 		}
@@ -492,32 +454,17 @@ describe("Utf16String.fromUtf16Bytes", () => {
 		[new Uint8Array([0xFE, 0xFF, 0xFE, 0xFF]), true, "\uFEFF"],
 		[new Uint8Array([0x0, 0x61, 0x67, 0x71]), false, "a\u6771"],
 		[new Uint8Array([0xD8, 0x34, 0xDD, 0x1E]), false, "\uD834\uDD1E"],
-	])(
-		"Given %p and %p returns %p",
-		(input, skipFirstBom, output) => {
-			expect(Utf16String.fromUtf16Bytes(input, false, skipFirstBom)).toEqual(output)
-		}
-	)
-
-	test.each([
 		[new Uint8Array([0x0, 0x0]), false, "\0"],
 		[new Uint8Array([0xFE, 0xFF, 0x0, 0x0]), true, "\0"],
 	])(
-		"Zero test",
+		"Given %p and %p returns %j",
 		(input, skipFirstBom, output) => {
 			expect(Utf16String.fromUtf16Bytes(input, false, skipFirstBom)).toEqual(output)
 		}
 	)
 
 	// TODO - gives a TypeError instead of a StringDecodingError when running with Jest
-	/*test.each([
-		new Uint8Array([0xFF])
-	])(
-		"Given %p throws",
-		(input) => {
-			expect(() => Utf16String.fromUtf16Bytes(input, false)).toThrow(StringDecodingError)
-		}
-	)*/
+	
 	test.each([
 		new Uint8Array([0xFF]),
 		new Uint8Array([0xD8, 0x34, 0xDD]),
@@ -541,18 +488,10 @@ describe("Utf16String.fromUtf16Bytes LittleEndian", () => {
 		[new Uint8Array([0xFF, 0xFE, 0xFF, 0xFE]), true, "\uFEFF"],
 		[new Uint8Array([0x61, 0x0, 0x71, 0x67]), false, "a\u6771"],
 		[new Uint8Array([0x34, 0xD8, 0x1E, 0xDD]), false, "\uD834\uDD1E"],
-	])(
-		"Given %p and %p returns %p",
-		(input, skipFirstBom, output) => {
-			expect(Utf16String.fromUtf16Bytes(input, true, skipFirstBom)).toEqual(output)
-		}
-	)
-
-	test.each([
 		[new Uint8Array([0x0, 0x0]), false, "\0"],
 		[new Uint8Array([0xFF, 0xFE, 0x0, 0x0]), true, "\0"],
 	])(
-		"Zero test",
+		"Given %p and %p returns %j",
 		(input, skipFirstBom, output) => {
 			expect(Utf16String.fromUtf16Bytes(input, true, skipFirstBom)).toEqual(output)
 		}
@@ -560,14 +499,14 @@ describe("Utf16String.fromUtf16Bytes LittleEndian", () => {
 
 	// TODO - gives a TypeError instead of a StringDecodingError when running with Jest
 	// see https://github.com/facebook/jest/issues/2549 and https://github.com/nodejs/node/issues/31852 and https://backend.cafe/should-you-use-jest-as-a-testing-library
-	/*test.each([
-		new Uint8Array([0xFF])
-	])(
-		"Given %p throws",
-		(input) => {
-			expect(() => Utf16String.fromUtf16Bytes(input, false)).toThrow(StringDecodingError)
-		}
-	)*/
+	// test.each([
+	// 	new Uint8Array([0xFF])
+	// ])(
+	// 	"Given %p throws",
+	// 	(input) => {
+	// 		expect(() => Utf16String.fromUtf8Bytes(input)).toThrow(StringDecodingError)
+	// 	}
+	// )
 	test.each([
 		new Uint8Array([0xFF]),
 		new Uint8Array([0x34, 0xD8, 0xDD]),
@@ -591,18 +530,10 @@ describe("Utf16String.fromUtf32Bytes", () => {
 		[new Uint8Array([0x0, 0x0, 0xFE, 0xFF, 0x0, 0x0, 0xFE, 0xFF]), true, "\uFEFF"],
 		[new Uint8Array([0x0, 0x0, 0x0, 0x61, 0x0, 0x0, 0x67, 0x71]), false, "a\u6771"],
 		[new Uint8Array([0x0, 0x01, 0xD1, 0x1E]), false, "\uD834\uDD1E"],
-	])(
-		"Given %p and %p returns %p",
-		(input, skipFirstBom, output) => {
-			expect(Utf16String.fromUtf32Bytes(input, false, skipFirstBom)).toEqual(output)
-		}
-	)
-
-	test.each([
 		[new Uint8Array([0x0, 0x0, 0x0, 0x0]), false, "\0"],
 		[new Uint8Array([0x0, 0x0, 0xFE, 0xFF, 0x0, 0x0, 0x0, 0x0]), true, "\0"],
 	])(
-		"Zero test",
+		"Given %p and %p returns %j",
 		(input, skipFirstBom, output) => {
 			expect(Utf16String.fromUtf32Bytes(input, false, skipFirstBom)).toEqual(output)
 		}
@@ -637,18 +568,10 @@ describe("Utf16String.fromUtf32Bytes LittleEndian", () => {
 		[new Uint8Array([0xFF, 0xFE, 0x0, 0x0, 0xFF, 0xFE, 0x0, 0x0]), true, "\uFEFF"],
 		[new Uint8Array([0x61, 0x0, 0x0, 0x0, 0x71, 0x67, 0x0, 0x0 ]), false, "a\u6771"],
 		[new Uint8Array([0x1E, 0xD1, 0x01, 0x0]), false, "\uD834\uDD1E"],
-	])(
-		"Given %p and %p returns %p",
-		(input, skipFirstBom, output) => {
-			expect(Utf16String.fromUtf32Bytes(input, true, skipFirstBom)).toEqual(output)
-		}
-	)
-
-	test.each([
 		[new Uint8Array([0x0, 0x0, 0x0, 0x0]), false, "\0"],
 		[new Uint8Array([0xFF, 0xFE, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0]), true, "\0"],
 	])(
-		"Zero test",
+		"Given %p and %p returns %j",
 		(input, skipFirstBom, output) => {
 			expect(Utf16String.fromUtf32Bytes(input, true, skipFirstBom)).toEqual(output)
 		}
@@ -681,18 +604,10 @@ describe("Utf16String.fromCodePointArray", () => {
 		[[0x6771], "\u6771"],
 		[[0xFEFF], "\uFEFF"],
 		[[0x1D11E], "\uD834\uDD1E"],
-	])(
-		"Given %p returns %p",
-		(input, output) => {
-			expect(Utf16String.fromCodePointArray(input)).toEqual(output)
-		}
-	)
-
-	test.each([
 		[[0x0], "\0"],
 		[[0x0, 0x0], "\0\0"],
 	])(
-		"Zero test",
+		"Given %p returns %j",
 		(input, output) => {
 			expect(Utf16String.fromCodePointArray(input)).toEqual(output)
 		}
@@ -1002,7 +917,7 @@ describe("ReliableTxtDocument.toBase64String", () => {
 		["Man", ReliableTxtEncoding.Utf16Reverse, "Base64|//5NAGEAbgA=|"],
 		["Man", ReliableTxtEncoding.Utf32, "Base64|AAD+/wAAAE0AAABhAAAAbg==|"],
 	])(
-		"Given %p and %p returns %p",
+		"Given %j and %p returns %p",
 		(input1, input2, output) => {
 			const document = new ReliableTxtDocument(input1, input2)
 			expect(document.toBase64String()).toEqual(output)
@@ -1020,7 +935,7 @@ describe("ReliableTxtDocument.fromBase64String", () => {
 		["Base64|//5NAGEAbgA=|", "Man", ReliableTxtEncoding.Utf16Reverse],
 		["Base64|AAD+/wAAAE0AAABhAAAAbg==|", "Man", ReliableTxtEncoding.Utf32],
 	])(
-		"Given %p returns %p and %p",
+		"Given %p returns %j and %p",
 		(input, output1, output2) => {
 			const fromDocument = ReliableTxtDocument.fromBase64String(input)
 			expect(fromDocument.text).toEqual(output1)
@@ -1112,24 +1027,28 @@ describe("Base64String.rawFromText + rawToText", () => {
 		["Man", ReliableTxtEncoding.Utf8, "77u/TWFu"],
 		["Many", ReliableTxtEncoding.Utf8, "77u/TWFueQ=="],
 		["\uFEFF", ReliableTxtEncoding.Utf8, "77u/77u/"],
+		["\u0000", ReliableTxtEncoding.Utf8, "77u/AA=="],
 		["Many hands make light work.", ReliableTxtEncoding.Utf8, "77u/TWFueSBoYW5kcyBtYWtlIGxpZ2h0IHdvcmsu"],
 		["", ReliableTxtEncoding.Utf16, "/v8="],
 		["M", ReliableTxtEncoding.Utf16, "/v8ATQ=="],
 		["Ma", ReliableTxtEncoding.Utf16, "/v8ATQBh"],
 		["Man", ReliableTxtEncoding.Utf16, "/v8ATQBhAG4="],
 		["\uFEFF", ReliableTxtEncoding.Utf16, "/v/+/w=="],
+		["\u0000", ReliableTxtEncoding.Utf16, "/v8AAA=="],
 		["", ReliableTxtEncoding.Utf16Reverse, "//4="],
 		["M", ReliableTxtEncoding.Utf16Reverse, "//5NAA=="],
 		["Ma", ReliableTxtEncoding.Utf16Reverse, "//5NAGEA"],
 		["Man", ReliableTxtEncoding.Utf16Reverse, "//5NAGEAbgA="],
 		["\uFEFF", ReliableTxtEncoding.Utf16Reverse, "//7//g=="],
+		["\u0000", ReliableTxtEncoding.Utf16Reverse, "//4AAA=="],
 		["", ReliableTxtEncoding.Utf32, "AAD+/w=="],
 		["M", ReliableTxtEncoding.Utf32, "AAD+/wAAAE0="],
 		["Ma", ReliableTxtEncoding.Utf32, "AAD+/wAAAE0AAABh"],
 		["Man", ReliableTxtEncoding.Utf32, "AAD+/wAAAE0AAABhAAAAbg=="],
 		["\uFEFF", ReliableTxtEncoding.Utf32, "AAD+/wAA/v8="],
+		["\u0000", ReliableTxtEncoding.Utf32, "AAD+/wAAAAA="],
 	])(
-		"Given %p returns %p",
+		"Given %j returns %p",
 		(input1, input2, output) => {
 			const base64Str = Base64String.rawFromText(input1, input2)
 			expect(base64Str).toEqual(output)
@@ -1193,8 +1112,12 @@ describe("Base64String.fromText + toText", () => {
 		["Man", ReliableTxtEncoding.Utf16, "Base64|/v8ATQBhAG4=|"],
 		["Man", ReliableTxtEncoding.Utf16Reverse, "Base64|//5NAGEAbgA=|"],
 		["Man", ReliableTxtEncoding.Utf32, "Base64|AAD+/wAAAE0AAABhAAAAbg==|"],
+		["", ReliableTxtEncoding.Utf8, "Base64|77u/|"],
+		["a", ReliableTxtEncoding.Utf8, "Base64|77u/YQ==|"],
+		["\u0000", ReliableTxtEncoding.Utf8, "Base64|77u/AA==|"],
+		["𝄞", ReliableTxtEncoding.Utf8, "Base64|77u/8J2Eng==|"],
 	])(
-		"Given %p returns %p",
+		"Given %j and %p returns %p",
 		(input1, input2, output) => {
 			const base64Str = Base64String.fromText(input1, input2)
 			expect(base64Str).toEqual(output)

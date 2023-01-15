@@ -28,6 +28,23 @@ class ReliableTxtEncodingUtil {
             throw new RangeError();
         }
     }
+    static getPreambleBytes(encoding) {
+        if (encoding === ReliableTxtEncoding.Utf8) {
+            return new Uint8Array([0xEF, 0xBB, 0xBF]);
+        }
+        else if (encoding === ReliableTxtEncoding.Utf16) {
+            return new Uint8Array([0xFE, 0xFF]);
+        }
+        else if (encoding === ReliableTxtEncoding.Utf16Reverse) {
+            return new Uint8Array([0xFF, 0xFE]);
+        }
+        else if (encoding === ReliableTxtEncoding.Utf32) {
+            return new Uint8Array([0x0, 0x0, 0xFE, 0xFF]);
+        }
+        else {
+            throw new RangeError();
+        }
+    }
 }
 exports.ReliableTxtEncodingUtil = ReliableTxtEncodingUtil;
 // ----------------------------------------------------------------------

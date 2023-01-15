@@ -6,6 +6,7 @@ export declare enum ReliableTxtEncoding {
 }
 export declare abstract class ReliableTxtEncodingUtil {
     static getPreambleSize(encoding: ReliableTxtEncoding): number;
+    static getPreambleBytes(encoding: ReliableTxtEncoding): Uint8Array;
 }
 export declare abstract class ReliableTxtLines {
     static join(lines: string[]): string;

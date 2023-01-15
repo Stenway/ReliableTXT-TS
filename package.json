@@ -1,6 +1,6 @@
 {
   "name": "@stenway/reliabletxt",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "description": "Stefan John / Stenway / ReliableTXT.com / 2023",
   "homepage": "https://www.reliabletxt.com",
   "repository": "github:Stenway/ReliableTXT-TS",
@@ -18,14 +18,19 @@
     "test": "tsc && jest --coverage"
   },
   "keywords": [
-    "text file",
+    "text-file",
     "encoding",
     "utf-8",
     "utf8",
     "utf-16",
     "utf16",
+    "utf16be",
+    "utf16le",
     "utf-32",
     "utf32",
+    "endianess",
+    "big-endian",
+    "little-endian",
     "codepoint",
     "codepoints",
     "txt",
