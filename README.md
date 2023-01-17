@@ -31,38 +31,32 @@ Others:
 
 ## Examples
 
+Join and split lines:
 ```ts
-import {
-	ReliableTxtDecoder, 
-	ReliableTxtDocument,
-	ReliableTxtEncoder,
-	ReliableTxtEncoding,
-	ReliableTxtLines
-} from "@stenway/reliabletxt"
-
-// join and split lines
-
 let twoJoinedLines = ReliableTxtLines.join(["Line 1", "Line 2"])
 let twoLines = ReliableTxtLines.split(twoJoinedLines)
 let threeLines = ReliableTxtLines.split("Line 1\r\nLine 2\n")
+```
 
-// encode
-
+Encode:
+```ts
 let text = "A\nB"
 let utf8Bytes = ReliableTxtEncoder.encode(text, ReliableTxtEncoding.Utf8)
 let utf16Bytes = ReliableTxtEncoder.encode(text, ReliableTxtEncoding.Utf16)
 let utf16ReverseBytes = ReliableTxtEncoder.encode(text, ReliableTxtEncoding.Utf16Reverse)
 let utf32Bytes = ReliableTxtEncoder.encode(text, ReliableTxtEncoding.Utf32)
+```
 
-// decode
-
+Decode:
+```ts
 let text1 = ReliableTxtDecoder.decode(utf8Bytes)
 let text2 = ReliableTxtDecoder.decode(utf16Bytes)
 let text3 = ReliableTxtDecoder.decode(utf16ReverseBytes)
 let text4 = ReliableTxtDecoder.decode(utf32Bytes)
+```
 
-// no ReliableTXT preamble
-
+No ReliableTXT preamble:
+```ts
 let zeroBytes = new Uint8Array()
 try {
 	let x = ReliableTxtDecoder.decode(zeroBytes)
@@ -70,9 +64,10 @@ try {
 	console.log("Error: Document does not have a ReliableTXT preamble")
 }
 let encoding = ReliableTxtDecoder.getEncodingOrNull(zeroBytes)
+```
 
-// document class
-
+Document class:
+```ts
 let document = new ReliableTxtDocument(text)
 let documentUtf16 = new ReliableTxtDocument(text, ReliableTxtEncoding.Utf16)
 
@@ -97,8 +92,6 @@ try {
 } catch (err) {
 	console.log("Error: Decoding error")
 }
-
-console.log("ReliableTXT usage")
 ```
 
 ## Reliable Base64 Encoding/Decoding
