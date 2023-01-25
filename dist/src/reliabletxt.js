@@ -55,6 +55,65 @@ class ReliableTxtLines {
     static split(text) {
         return text.split("\n");
     }
+    static getLineInfo(text, codeUnitIndex) {
+        if (codeUnitIndex > text.length || codeUnitIndex < 0) {
+            throw new RangeError("CodeUnit index out of range");
+        }
+        if (codeUnitIndex === 0) {
+            return [0, 0, 0];
+        }
+        let charIndex = -1;
+        let lineIndex = 0;
+        let lineCharIndex = -1;
+        let length = codeUnitIndex;
+        if (codeUnitIndex === text.length) {
+            length -= 1;
+        }
+        let wasLineBreak = false;
+        for (let i = 0; i <= length; i++) {
+            if (wasLineBreak) {
+                wasLineBreak = false;
+                charIndex = -1;
+                lineCharIndex = -1;
+                lineIndex++;
+            }
+            const firstCodeUnit = text.charCodeAt(i);
+            if (firstCodeUnit === 0x0A) {
+                wasLineBreak = true;
+            }
+            else if (firstCodeUnit >= 0xD800 && firstCodeUnit <= 0xDFFF) {
+                if (firstCodeUnit >= 0xDC00) {
+                    throw new InvalidUtf16StringError();
+                }
+                i++;
+                if (i >= text.length) {
+                    throw new InvalidUtf16StringError();
+                }
+                const secondCodeUnit = text.charCodeAt(i);
+                if (!(secondCodeUnit >= 0xDC00 && secondCodeUnit <= 0xDFFF)) {
+                    throw new InvalidUtf16StringError();
+                }
+                if (codeUnitIndex === text.length - 1 && i === text.length - 1) {
+                    charIndex++;
+                    lineCharIndex++;
+                }
+            }
+            charIndex++;
+            lineCharIndex++;
+        }
+        if (codeUnitIndex === text.length) {
+            if (!wasLineBreak) {
+                charIndex++;
+                lineCharIndex++;
+            }
+            else {
+                charIndex = 0;
+                lineCharIndex = 0;
+                lineIndex++;
+            }
+        }
+        return [charIndex, lineIndex, lineCharIndex];
+    }
 }
 exports.ReliableTxtLines = ReliableTxtLines;
 // ----------------------------------------------------------------------
@@ -420,8 +479,7 @@ class Base64String {
     static rawFromBytes(bytes) {
         const numCompleteTriples = Math.floor(bytes.length / 3);
         const rest = bytes.length % 3;
-        const numTotalTriples = Math.ceil(bytes.length / 3);
-        const utf16Bytes = new Uint8Array(numTotalTriples * 4 * 2);
+        const utf16Bytes = new Uint8Array(numCompleteTriples * 4 * 2 + (rest !== 0 ? ((rest + 1) * 2) : 0));
         const dataView = new DataView(utf16Bytes.buffer);
         const lookup = this.encoderLookup;
         for (let i = 0; i < numCompleteTriples; i++) {
@@ -450,7 +508,6 @@ class Base64String {
             dataView.setUint16(offset, lookup[i0]);
             dataView.setUint16(offset + 2, lookup[i1]);
             dataView.setUint16(offset + 4, lookup[i2]);
-            dataView.setUint16(offset + 6, 0x3D);
         }
         else if (rest === 1) {
             const b0 = bytes[numCompleteTriples * 3];
@@ -460,8 +517,6 @@ class Base64String {
             const offset = numCompleteTriples * 4 * 2;
             dataView.setUint16(offset, lookup[i0]);
             dataView.setUint16(offset + 2, lookup[i1]);
-            dataView.setUint16(offset + 4, 0x3D);
-            dataView.setUint16(offset + 6, 0x3D);
         }
         return Utf16String.fromUtf16Bytes(utf16Bytes, false);
     }
@@ -478,24 +533,15 @@ class Base64String {
         return this.fromBytes(bytes);
     }
     static rawToBytes(base64Str) {
-        if (base64Str.length % 4 !== 0) {
+        if (base64Str.endsWith("=")) {
             throw new InvalidBase64StringError();
         }
-        let numPadding;
-        let numCompleteQuadruples;
-        if (base64Str.endsWith("==")) {
-            numPadding = 2;
-            numCompleteQuadruples = base64Str.length / 4 - 1;
+        const numCompleteQuadruples = Math.floor(base64Str.length / 4);
+        const restLength = base64Str.length % 4;
+        if (restLength === 1) {
+            throw new InvalidBase64StringError();
         }
-        else if (base64Str.endsWith("=")) {
-            numPadding = 1;
-            numCompleteQuadruples = base64Str.length / 4 - 1;
-        }
-        else {
-            numPadding = 0;
-            numCompleteQuadruples = base64Str.length / 4;
-        }
-        const bytes = new Uint8Array(numCompleteQuadruples * 3 + (numPadding !== 0 ? 3 - numPadding : 0));
+        const bytes = new Uint8Array(numCompleteQuadruples * 3 + (restLength !== 0 ? restLength - 1 : 0));
         const lookup = this.decoderLookup;
         for (let i = 0; i < numCompleteQuadruples; i++) {
             const c0 = base64Str.charCodeAt(i * 4);
@@ -520,7 +566,7 @@ class Base64String {
             bytes[i * 3 + 1] = b1;
             bytes[i * 3 + 2] = b2;
         }
-        if (numPadding === 1) {
+        if (restLength === 3) {
             const c0 = base64Str.charCodeAt(numCompleteQuadruples * 4);
             const c1 = base64Str.charCodeAt(numCompleteQuadruples * 4 + 1);
             const c2 = base64Str.charCodeAt(numCompleteQuadruples * 4 + 2);
@@ -539,7 +585,7 @@ class Base64String {
             bytes[numCompleteQuadruples * 3] = b0;
             bytes[numCompleteQuadruples * 3 + 1] = b1;
         }
-        else if (numPadding === 2) {
+        else if (restLength === 2) {
             const c0 = base64Str.charCodeAt(numCompleteQuadruples * 4);
             const c1 = base64Str.charCodeAt(numCompleteQuadruples * 4 + 1);
             if (c0 > 0x7A || c1 > 0x7A) {

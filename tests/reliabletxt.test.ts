@@ -97,6 +97,58 @@ describe("ReliableTxtLines.split", () => {
 	)
 })
 
+describe("ReliableTxtLines.getLineInfo", () => {
+	test.each([
+		["", 0, 0, 0, 0],
+		["a", 0, 0, 0, 0],
+		["a", 1, 1, 0, 1],
+		["ab", 1, 1, 0, 1],
+		["ab", 2, 2, 0, 2],
+		["\n", 0, 0, 0, 0],
+		["\n", 1, 0, 1, 0],
+		["a\nb", 0, 0, 0, 0],
+		["a\nb", 1, 1, 0, 1],
+		["a\nb", 2, 0, 1, 0],
+		["a\nb", 3, 1, 1, 1],
+		["\uD834\uDD1E", 0, 0, 0, 0],
+		["\uD834\uDD1E", 1, 1, 0, 1],
+		["\uD834\uDD1E", 2, 1, 0, 1],
+		["\uD834\uDD1Ea", 2, 1, 0, 1],
+		["\uD834\uDD1Ea", 3, 2, 0, 2],
+		["\uD834\uDD1E\uD834\uDD1E", 3, 2, 0, 2],
+		["\uD834\uDD1E\uD834\uDD1E", 4, 2, 0, 2],
+		["\n\uD834\uDD1E", 1, 0, 1, 0],
+		["\n\uD834\uDD1E", 2, 1, 1, 1],
+		["\n\uD834\uDD1E", 3, 1, 1, 1],
+		["\n\uD834\uDD1E\uD834\uDD1E", 4, 2, 1, 2],
+		["\n\uD834\uDD1E\uD834\uDD1E", 5, 2, 1, 2],
+		["a𝄞\n𝄞b\n𝄞", 0, 0, 0, 0],
+		["a𝄞\n𝄞b\n𝄞", 1, 1, 0, 1],
+		["a𝄞\n𝄞b\n𝄞", 2, 1, 0, 1],
+		["a𝄞\n𝄞b\n𝄞", 3, 2, 0, 2],
+		["a𝄞\n𝄞b\n𝄞", 4, 0, 1, 0],
+	])(
+		"Given %p and %p returns %p, %p and %p",
+		(input1, input2, output1, output2, output3) => {
+			const result = ReliableTxtLines.getLineInfo(input1, input2)
+			expect(result).toEqual([output1, output2, output3])
+		}
+	)
+
+	test.each([
+		["", 1],
+		["", -1],
+		["\uD834", 1],
+		["\uD834\uD834", 1],
+		["\uDD1E", 1],
+	])(
+		"Given %p and %p throws",
+		(input1, input2) => {
+			expect(() => ReliableTxtLines.getLineInfo(input1, input2)).toThrowError()
+		}
+	)
+})
+
 // ----------------------------------------------------------------------
 
 test("InvalidUtf16StringError", () => {
@@ -910,12 +962,12 @@ describe("ReliableTxtDocument.toBase64String", () => {
 	test.each([
 		["", ReliableTxtEncoding.Utf8, "Base64|77u/|"],
 		["Many hands make light work.", ReliableTxtEncoding.Utf8, "Base64|77u/TWFueSBoYW5kcyBtYWtlIGxpZ2h0IHdvcmsu|"],
-		["\u0000", ReliableTxtEncoding.Utf8, "Base64|77u/AA==|"],
+		["\u0000", ReliableTxtEncoding.Utf8, "Base64|77u/AA|"],
 		["Man", ReliableTxtEncoding.Utf8, "Base64|77u/TWFu|"],
-		["a¥ßä€東𝄞", ReliableTxtEncoding.Utf8, "Base64|77u/YcKlw5/DpOKCrOadsfCdhJ4=|"],
-		["Man", ReliableTxtEncoding.Utf16, "Base64|/v8ATQBhAG4=|"],
-		["Man", ReliableTxtEncoding.Utf16Reverse, "Base64|//5NAGEAbgA=|"],
-		["Man", ReliableTxtEncoding.Utf32, "Base64|AAD+/wAAAE0AAABhAAAAbg==|"],
+		["a¥ßä€東𝄞", ReliableTxtEncoding.Utf8, "Base64|77u/YcKlw5/DpOKCrOadsfCdhJ4|"],
+		["Man", ReliableTxtEncoding.Utf16, "Base64|/v8ATQBhAG4|"],
+		["Man", ReliableTxtEncoding.Utf16Reverse, "Base64|//5NAGEAbgA|"],
+		["Man", ReliableTxtEncoding.Utf32, "Base64|AAD+/wAAAE0AAABhAAAAbg|"],
 	])(
 		"Given %j and %p returns %p",
 		(input1, input2, output) => {
@@ -928,12 +980,12 @@ describe("ReliableTxtDocument.toBase64String", () => {
 describe("ReliableTxtDocument.fromBase64String", () => {
 	test.each([
 		["Base64|77u/|", "", ReliableTxtEncoding.Utf8],
-		["Base64|77u/AA==|", "\u0000", ReliableTxtEncoding.Utf8],
+		["Base64|77u/AA|", "\u0000", ReliableTxtEncoding.Utf8],
 		["Base64|77u/TWFu|", "Man", ReliableTxtEncoding.Utf8],
-		["Base64|77u/8J2Eng==|", "𝄞", ReliableTxtEncoding.Utf8],
-		["Base64|/v8ATQBhAG4=|", "Man", ReliableTxtEncoding.Utf16],
-		["Base64|//5NAGEAbgA=|", "Man", ReliableTxtEncoding.Utf16Reverse],
-		["Base64|AAD+/wAAAE0AAABhAAAAbg==|", "Man", ReliableTxtEncoding.Utf32],
+		["Base64|77u/8J2Eng|", "𝄞", ReliableTxtEncoding.Utf8],
+		["Base64|/v8ATQBhAG4|", "Man", ReliableTxtEncoding.Utf16],
+		["Base64|//5NAGEAbgA|", "Man", ReliableTxtEncoding.Utf16Reverse],
+		["Base64|AAD+/wAAAE0AAABhAAAAbg|", "Man", ReliableTxtEncoding.Utf32],
 	])(
 		"Given %p returns %j and %p",
 		(input, output1, output2) => {
@@ -967,18 +1019,18 @@ test("InvalidBase64StringError", () => {
 describe("Base64String.rawFromBytes + rawToBytes", () => {
 	test.each([
 		[[], ""],
-		[[0x4d], "TQ=="],
-		[[0x4d, 0x61], "TWE="],
+		[[0x4d], "TQ"],
+		[[0x4d, 0x61], "TWE"],
 		[[0x4d, 0x61, 0x6e], "TWFu"],
-		[[0x4d, 0x61, 0x6e, 0x4d], "TWFuTQ=="],
-		[[0x0], "AA=="],
-		[[0x0, 0x0], "AAA="],
+		[[0x4d, 0x61, 0x6e, 0x4d], "TWFuTQ"],
+		[[0x0], "AA"],
+		[[0x0, 0x0], "AAA"],
 		[[0x0, 0x0, 0x0], "AAAA"],
 		[[0x0, 0x0, 0x1], "AAAB"],
 		[[0x20, 0x21, 0x22], "ICEi"],
-		[[0xA5, 0xDF], "pd8="],
-		[[0xFF], "/w=="],
-		[[0xFF, 0xFF], "//8="],
+		[[0xA5, 0xDF], "pd8"],
+		[[0xFF], "/w"],
+		[[0xFF, 0xFF], "//8"],
 		[[0xFF, 0xFF, 0xFF], "////"],
 		[[0xFF, 0xFF, 0xFE], "///+"],
 		[[0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF], "////////"],
@@ -1015,38 +1067,38 @@ test("Base64String.rawFromBytes + rawToBytes 256", () => {
 	expect(byteValues.length).toEqual(256)
 	const bytes = new Uint8Array(byteValues)
 	const base64Str = Base64String.rawFromBytes(bytes)
-	expect(base64Str).toEqual("AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+P0BBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWltcXV5fYGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6e3x9fn+AgYKDhIWGh4iJiouMjY6PkJGSk5SVlpeYmZqbnJ2en6ChoqOkpaanqKmqq6ytrq+wsbKztLW2t7i5uru8vb6/wMHCw8TFxsfIycrLzM3Oz9DR0tPU1dbX2Nna29zd3t/g4eLj5OXm5+jp6uvs7e7v8PHy8/T19vf4+fr7/P3+/w==")
+	expect(base64Str).toEqual("AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+P0BBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWltcXV5fYGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6e3x9fn+AgYKDhIWGh4iJiouMjY6PkJGSk5SVlpeYmZqbnJ2en6ChoqOkpaanqKmqq6ytrq+wsbKztLW2t7i5uru8vb6/wMHCw8TFxsfIycrLzM3Oz9DR0tPU1dbX2Nna29zd3t/g4eLj5OXm5+jp6uvs7e7v8PHy8/T19vf4+fr7/P3+/w")
 	expect(Base64String.rawToBytes(base64Str)).toEqual(bytes)
 })
 
 describe("Base64String.rawFromText + rawToText", () => {
 	test.each([
 		["", ReliableTxtEncoding.Utf8, "77u/"],
-		["M", ReliableTxtEncoding.Utf8, "77u/TQ=="],
-		["Ma", ReliableTxtEncoding.Utf8, "77u/TWE="],
+		["M", ReliableTxtEncoding.Utf8, "77u/TQ"],
+		["Ma", ReliableTxtEncoding.Utf8, "77u/TWE"],
 		["Man", ReliableTxtEncoding.Utf8, "77u/TWFu"],
-		["Many", ReliableTxtEncoding.Utf8, "77u/TWFueQ=="],
+		["Many", ReliableTxtEncoding.Utf8, "77u/TWFueQ"],
 		["\uFEFF", ReliableTxtEncoding.Utf8, "77u/77u/"],
-		["\u0000", ReliableTxtEncoding.Utf8, "77u/AA=="],
+		["\u0000", ReliableTxtEncoding.Utf8, "77u/AA"],
 		["Many hands make light work.", ReliableTxtEncoding.Utf8, "77u/TWFueSBoYW5kcyBtYWtlIGxpZ2h0IHdvcmsu"],
-		["", ReliableTxtEncoding.Utf16, "/v8="],
-		["M", ReliableTxtEncoding.Utf16, "/v8ATQ=="],
+		["", ReliableTxtEncoding.Utf16, "/v8"],
+		["M", ReliableTxtEncoding.Utf16, "/v8ATQ"],
 		["Ma", ReliableTxtEncoding.Utf16, "/v8ATQBh"],
-		["Man", ReliableTxtEncoding.Utf16, "/v8ATQBhAG4="],
-		["\uFEFF", ReliableTxtEncoding.Utf16, "/v/+/w=="],
-		["\u0000", ReliableTxtEncoding.Utf16, "/v8AAA=="],
-		["", ReliableTxtEncoding.Utf16Reverse, "//4="],
-		["M", ReliableTxtEncoding.Utf16Reverse, "//5NAA=="],
+		["Man", ReliableTxtEncoding.Utf16, "/v8ATQBhAG4"],
+		["\uFEFF", ReliableTxtEncoding.Utf16, "/v/+/w"],
+		["\u0000", ReliableTxtEncoding.Utf16, "/v8AAA"],
+		["", ReliableTxtEncoding.Utf16Reverse, "//4"],
+		["M", ReliableTxtEncoding.Utf16Reverse, "//5NAA"],
 		["Ma", ReliableTxtEncoding.Utf16Reverse, "//5NAGEA"],
-		["Man", ReliableTxtEncoding.Utf16Reverse, "//5NAGEAbgA="],
-		["\uFEFF", ReliableTxtEncoding.Utf16Reverse, "//7//g=="],
-		["\u0000", ReliableTxtEncoding.Utf16Reverse, "//4AAA=="],
-		["", ReliableTxtEncoding.Utf32, "AAD+/w=="],
-		["M", ReliableTxtEncoding.Utf32, "AAD+/wAAAE0="],
+		["Man", ReliableTxtEncoding.Utf16Reverse, "//5NAGEAbgA"],
+		["\uFEFF", ReliableTxtEncoding.Utf16Reverse, "//7//g"],
+		["\u0000", ReliableTxtEncoding.Utf16Reverse, "//4AAA"],
+		["", ReliableTxtEncoding.Utf32, "AAD+/w"],
+		["M", ReliableTxtEncoding.Utf32, "AAD+/wAAAE0"],
 		["Ma", ReliableTxtEncoding.Utf32, "AAD+/wAAAE0AAABh"],
-		["Man", ReliableTxtEncoding.Utf32, "AAD+/wAAAE0AAABhAAAAbg=="],
-		["\uFEFF", ReliableTxtEncoding.Utf32, "AAD+/wAA/v8="],
-		["\u0000", ReliableTxtEncoding.Utf32, "AAD+/wAAAAA="],
+		["Man", ReliableTxtEncoding.Utf32, "AAD+/wAAAE0AAABhAAAAbg"],
+		["\uFEFF", ReliableTxtEncoding.Utf32, "AAD+/wAA/v8"],
+		["\u0000", ReliableTxtEncoding.Utf32, "AAD+/wAAAAA"],
 	])(
 		"Given %j returns %p",
 		(input1, input2, output) => {
@@ -1066,18 +1118,18 @@ describe("Base64String.rawFromText + rawToText", () => {
 describe("Base64String.fromBytes + toBytes", () => {
 	test.each([
 		[[], "Base64||"],
-		[[0x4d], "Base64|TQ==|"],
-		[[0x4d, 0x61], "Base64|TWE=|"],
+		[[0x4d], "Base64|TQ|"],
+		[[0x4d, 0x61], "Base64|TWE|"],
 		[[0x4d, 0x61, 0x6e], "Base64|TWFu|"],
-		[[0x4d, 0x61, 0x6e, 0x4d], "Base64|TWFuTQ==|"],
-		[[0x0], "Base64|AA==|"],
-		[[0x0, 0x0], "Base64|AAA=|"],
+		[[0x4d, 0x61, 0x6e, 0x4d], "Base64|TWFuTQ|"],
+		[[0x0], "Base64|AA|"],
+		[[0x0, 0x0], "Base64|AAA|"],
 		[[0x0, 0x0, 0x0], "Base64|AAAA|"],
 		[[0x0, 0x0, 0x1], "Base64|AAAB|"],
 		[[0x20, 0x21, 0x22], "Base64|ICEi|"],
-		[[0xA5, 0xDF], "Base64|pd8=|"],
-		[[0xFF], "Base64|/w==|"],
-		[[0xFF, 0xFF], "Base64|//8=|"],
+		[[0xA5, 0xDF], "Base64|pd8|"],
+		[[0xFF], "Base64|/w|"],
+		[[0xFF, 0xFF], "Base64|//8|"],
 		[[0xFF, 0xFF, 0xFF], "Base64|////|"],
 		[[0xFF, 0xFF, 0xFE], "Base64|///+|"],
 		[[0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF], "Base64|////////|"],
@@ -1109,13 +1161,13 @@ describe("Base64String.toBytes", () => {
 describe("Base64String.fromText + toText", () => {
 	test.each([
 		["Man", ReliableTxtEncoding.Utf8, "Base64|77u/TWFu|"],
-		["Man", ReliableTxtEncoding.Utf16, "Base64|/v8ATQBhAG4=|"],
-		["Man", ReliableTxtEncoding.Utf16Reverse, "Base64|//5NAGEAbgA=|"],
-		["Man", ReliableTxtEncoding.Utf32, "Base64|AAD+/wAAAE0AAABhAAAAbg==|"],
+		["Man", ReliableTxtEncoding.Utf16, "Base64|/v8ATQBhAG4|"],
+		["Man", ReliableTxtEncoding.Utf16Reverse, "Base64|//5NAGEAbgA|"],
+		["Man", ReliableTxtEncoding.Utf32, "Base64|AAD+/wAAAE0AAABhAAAAbg|"],
 		["", ReliableTxtEncoding.Utf8, "Base64|77u/|"],
-		["a", ReliableTxtEncoding.Utf8, "Base64|77u/YQ==|"],
-		["\u0000", ReliableTxtEncoding.Utf8, "Base64|77u/AA==|"],
-		["𝄞", ReliableTxtEncoding.Utf8, "Base64|77u/8J2Eng==|"],
+		["a", ReliableTxtEncoding.Utf8, "Base64|77u/YQ|"],
+		["\u0000", ReliableTxtEncoding.Utf8, "Base64|77u/AA|"],
+		["𝄞", ReliableTxtEncoding.Utf8, "Base64|77u/8J2Eng|"],
 	])(
 		"Given %j and %p returns %p",
 		(input1, input2, output) => {

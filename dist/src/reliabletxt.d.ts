@@ -11,6 +11,7 @@ export declare abstract class ReliableTxtEncodingUtil {
 export declare abstract class ReliableTxtLines {
     static join(lines: string[]): string;
     static split(text: string): string[];
+    static getLineInfo(text: string, codeUnitIndex: number): [charIndex: number, lineIndex: number, lineCharIndex: number];
 }
 export declare class InvalidUtf16StringError extends Error {
     constructor();

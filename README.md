@@ -120,13 +120,13 @@ Uses the UTF-8 encoding with BOM to convert the UTF-16 JavaScript string to a bi
 let base64str = Base64String.fromText("abc", ReliableTxtEncoding.Utf16)
 ```
 
-**Reliable Base64** strings have the prefix 'Base64|' and suffix '|'. Padding characters '=' are required. The alphabet is: ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz0123456789+/
+**Reliable Base64** strings have the prefix 'Base64|' and suffix '|'. Padding characters '=' are not allowed. The alphabet is: ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz0123456789+/
 
 Here are some examples using the UTF-8 encoding. An empty string is represented with '77u/' because the UTF-8 BOM is 3 bytes long and that's its Base64 representation:
 ```
 ""          　->   Base64|77u/|
-"Many"      　->   Base64|77u/TWFueQ==|
-"a¥ßä€東𝄞"    ->   Base64|77u/YcKlw5/DpOKCrOadsfCdhJ4=|
+"Many"      　->   Base64|77u/TWFueQ|
+"a¥ßä€東𝄞"    ->   Base64|77u/YcKlw5/DpOKCrOadsfCdhJ4|
 ```
 
 The ReliableTxtDocument class has the comfort methods toBase64String and fromBase64String. The chosen encoding of the ReliableTxtDocument is preserved:
