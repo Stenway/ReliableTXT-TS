@@ -1,12 +1,10 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const src_1 = require("../src");
+import { Base64String, InvalidBase64StringError, InvalidUtf16StringError, NoReliableTxtPreambleError, ReliableTxtDecoder, ReliableTxtDocument, ReliableTxtEncoder, ReliableTxtEncoding, ReliableTxtEncodingUtil, ReliableTxtLines, StringDecodingError, Utf16String } from "../src/reliabletxt.js";
 describe("ReliableTxtEncoding", () => {
     test.each([
-        [src_1.ReliableTxtEncoding.Utf8, 0],
-        [src_1.ReliableTxtEncoding.Utf16, 1],
-        [src_1.ReliableTxtEncoding.Utf16Reverse, 2],
-        [src_1.ReliableTxtEncoding.Utf32, 3],
+        [ReliableTxtEncoding.Utf8, 0],
+        [ReliableTxtEncoding.Utf16, 1],
+        [ReliableTxtEncoding.Utf16Reverse, 2],
+        [ReliableTxtEncoding.Utf32, 3],
     ])("%p is %p", (input, output) => {
         expect(input).toEqual(output);
     });
@@ -14,29 +12,29 @@ describe("ReliableTxtEncoding", () => {
 // ----------------------------------------------------------------------
 describe("ReliableTxtEncodingUtil.getPreambleSize", () => {
     test.each([
-        [src_1.ReliableTxtEncoding.Utf8, 3],
-        [src_1.ReliableTxtEncoding.Utf16, 2],
-        [src_1.ReliableTxtEncoding.Utf16Reverse, 2],
-        [src_1.ReliableTxtEncoding.Utf32, 4],
+        [ReliableTxtEncoding.Utf8, 3],
+        [ReliableTxtEncoding.Utf16, 2],
+        [ReliableTxtEncoding.Utf16Reverse, 2],
+        [ReliableTxtEncoding.Utf32, 4],
     ])("Given %p returns %p", (input, output) => {
-        expect(src_1.ReliableTxtEncodingUtil.getPreambleSize(input)).toEqual(output);
+        expect(ReliableTxtEncodingUtil.getPreambleSize(input)).toEqual(output);
     });
     test("Invalid encoding", () => {
-        expect(() => src_1.ReliableTxtEncodingUtil.getPreambleSize(4)).toThrow(RangeError);
+        expect(() => ReliableTxtEncodingUtil.getPreambleSize(4)).toThrow(RangeError);
     });
 });
 // ----------------------------------------------------------------------
 describe("ReliableTxtEncodingUtil.getPreambleBytes", () => {
     test.each([
-        [src_1.ReliableTxtEncoding.Utf8, [0xEF, 0xBB, 0xBF]],
-        [src_1.ReliableTxtEncoding.Utf16, [0xFE, 0xFF]],
-        [src_1.ReliableTxtEncoding.Utf16Reverse, [0xFF, 0xFE]],
-        [src_1.ReliableTxtEncoding.Utf32, [0x0, 0x0, 0xFE, 0xFF]],
+        [ReliableTxtEncoding.Utf8, [0xEF, 0xBB, 0xBF]],
+        [ReliableTxtEncoding.Utf16, [0xFE, 0xFF]],
+        [ReliableTxtEncoding.Utf16Reverse, [0xFF, 0xFE]],
+        [ReliableTxtEncoding.Utf32, [0x0, 0x0, 0xFE, 0xFF]],
     ])("Given %p returns %p", (input, output) => {
-        expect(src_1.ReliableTxtEncodingUtil.getPreambleBytes(input)).toEqual(new Uint8Array(output));
+        expect(ReliableTxtEncodingUtil.getPreambleBytes(input)).toEqual(new Uint8Array(output));
     });
     test("Invalid encoding", () => {
-        expect(() => src_1.ReliableTxtEncodingUtil.getPreambleBytes(4)).toThrow(RangeError);
+        expect(() => ReliableTxtEncodingUtil.getPreambleBytes(4)).toThrow(RangeError);
     });
 });
 // ----------------------------------------------------------------------
@@ -56,7 +54,7 @@ describe("ReliableTxtLines.join", () => {
         [["\u0000", "\u0000"], "\u0000\n\u0000"],
         [["𝄞", "𝄞"], "𝄞\n𝄞"],
     ])("Given %j returns %j", (input, output) => {
-        expect(src_1.ReliableTxtLines.join(input)).toEqual(output);
+        expect(ReliableTxtLines.join(input)).toEqual(output);
     });
 });
 describe("ReliableTxtLines.split", () => {
@@ -70,7 +68,7 @@ describe("ReliableTxtLines.split", () => {
         ["Line1\nLine2\n", ["Line1", "Line2", ""]],
         ["Line1\r\nLine2", ["Line1\r", "Line2"]],
     ])("Given %p returns %p", (input, output) => {
-        expect(src_1.ReliableTxtLines.split(input)).toEqual(output);
+        expect(ReliableTxtLines.split(input)).toEqual(output);
     });
 });
 describe("ReliableTxtLines.getLineInfo", () => {
@@ -104,7 +102,7 @@ describe("ReliableTxtLines.getLineInfo", () => {
         ["a𝄞\n𝄞b\n𝄞", 3, 2, 0, 2],
         ["a𝄞\n𝄞b\n𝄞", 4, 0, 1, 0],
     ])("Given %p and %p returns %p, %p and %p", (input1, input2, output1, output2, output3) => {
-        const result = src_1.ReliableTxtLines.getLineInfo(input1, input2);
+        const result = ReliableTxtLines.getLineInfo(input1, input2);
         expect(result).toEqual([output1, output2, output3]);
     });
     test.each([
@@ -114,20 +112,20 @@ describe("ReliableTxtLines.getLineInfo", () => {
         ["\uD834\uD834", 1],
         ["\uDD1E", 1],
     ])("Given %p and %p throws", (input1, input2) => {
-        expect(() => src_1.ReliableTxtLines.getLineInfo(input1, input2)).toThrowError();
+        expect(() => ReliableTxtLines.getLineInfo(input1, input2)).toThrowError();
     });
 });
 // ----------------------------------------------------------------------
 test("InvalidUtf16StringError", () => {
-    expect(new src_1.InvalidUtf16StringError().message).toEqual("Invalid UTF16 string");
+    expect(new InvalidUtf16StringError().message).toEqual("Invalid UTF16 string");
 });
 // ----------------------------------------------------------------------
 test("StringDecodingError", () => {
-    expect(new src_1.StringDecodingError().message).toEqual("Could not decode string");
+    expect(new StringDecodingError().message).toEqual("Could not decode string");
 });
 // ----------------------------------------------------------------------
 test("NoReliableTxtPreambleError", () => {
-    expect(new src_1.NoReliableTxtPreambleError().message).toEqual("Document does not have a ReliableTXT preamble");
+    expect(new NoReliableTxtPreambleError().message).toEqual("Document does not have a ReliableTXT preamble");
 });
 // ----------------------------------------------------------------------
 describe("Utf16String.isValid", () => {
@@ -144,7 +142,7 @@ describe("Utf16String.isValid", () => {
         ["a\uD800\uDC00", true],
         ["a\uD800\uDC00a", true],
     ])("Given %j returns %p", (input, output) => {
-        expect(src_1.Utf16String.isValid(input)).toEqual(output);
+        expect(Utf16String.isValid(input)).toEqual(output);
     });
 });
 describe("Utf16String.validate", () => {
@@ -154,7 +152,7 @@ describe("Utf16String.validate", () => {
         "\uDC00",
         "\uDC00a"
     ])("Given %p throws", (input) => {
-        expect(() => src_1.Utf16String.validate(input)).toThrow(src_1.InvalidUtf16StringError);
+        expect(() => Utf16String.validate(input)).toThrow(InvalidUtf16StringError);
     });
     test.each([
         "",
@@ -164,7 +162,7 @@ describe("Utf16String.validate", () => {
         "a\uD800\uDC00",
         "a\uD800\uDC00a",
     ])("Given %p does not throw", (input) => {
-        expect(src_1.Utf16String.validate(input));
+        expect(Utf16String.validate(input));
     });
 });
 describe("Utf16String.getCodePointCount", () => {
@@ -177,7 +175,7 @@ describe("Utf16String.getCodePointCount", () => {
         ["a\uD800\uDC00", 2],
         ["a\uD800\uDC00a", 3],
     ])("Given %j returns %p", (input, output) => {
-        expect(src_1.Utf16String.getCodePointCount(input)).toEqual(output);
+        expect(Utf16String.getCodePointCount(input)).toEqual(output);
     });
     test.each([
         "\uD800",
@@ -186,7 +184,7 @@ describe("Utf16String.getCodePointCount", () => {
         "\uDC00",
         "\uDC00a"
     ])("Given %p throws", (input) => {
-        expect(() => src_1.Utf16String.getCodePointCount(input)).toThrow(src_1.InvalidUtf16StringError);
+        expect(() => Utf16String.getCodePointCount(input)).toThrow(InvalidUtf16StringError);
     });
 });
 describe("Utf16String.getCodePointArray", () => {
@@ -196,7 +194,7 @@ describe("Utf16String.getCodePointArray", () => {
         ["a\u6771", [0x61, 0x6771]],
         ["\uD834\uDD1E", [0x1D11E]],
     ])("Given %p returns %p", (input, output) => {
-        expect(src_1.Utf16String.getCodePointArray(input)).toEqual(output);
+        expect(Utf16String.getCodePointArray(input)).toEqual(output);
     });
     test.each([
         "\uD800",
@@ -205,7 +203,7 @@ describe("Utf16String.getCodePointArray", () => {
         "\uDC00",
         "\uDC00a"
     ])("Given %p throws", (input) => {
-        expect(() => src_1.Utf16String.getCodePointArray(input)).toThrow(src_1.InvalidUtf16StringError);
+        expect(() => Utf16String.getCodePointArray(input)).toThrow(InvalidUtf16StringError);
     });
 });
 describe("Utf16String.getCodePoints", () => {
@@ -216,7 +214,7 @@ describe("Utf16String.getCodePoints", () => {
         ["a\u6771", new Uint32Array([0x61, 0x6771])],
         ["\uD834\uDD1E", new Uint32Array([0x1D11E])],
     ])("Given %j returns %p", (input, output) => {
-        expect(src_1.Utf16String.getCodePoints(input)).toEqual(output);
+        expect(Utf16String.getCodePoints(input)).toEqual(output);
     });
     test.each([
         "\uD800",
@@ -225,7 +223,7 @@ describe("Utf16String.getCodePoints", () => {
         "\uDC00",
         "\uDC00a"
     ])("Given %p throws", (input) => {
-        expect(() => src_1.Utf16String.getCodePoints(input)).toThrow(src_1.InvalidUtf16StringError);
+        expect(() => Utf16String.getCodePoints(input)).toThrow(InvalidUtf16StringError);
     });
 });
 describe("Utf16String.toUtf8Bytes", () => {
@@ -239,7 +237,7 @@ describe("Utf16String.toUtf8Bytes", () => {
         ["\uD834\uDD1E", new Uint8Array([0xF0, 0x9D, 0x84, 0x9E])],
         ["\u0000", new Uint8Array([0x0])],
     ])("Given %j returns %p", (input, output) => {
-        expect(src_1.Utf16String.toUtf8Bytes(input)).toEqual(output);
+        expect(Utf16String.toUtf8Bytes(input)).toEqual(output);
     });
     test.each([
         "\uD800",
@@ -248,7 +246,7 @@ describe("Utf16String.toUtf8Bytes", () => {
         "\uDC00",
         "\uDC00a"
     ])("Given %p throws", (input) => {
-        expect(() => src_1.Utf16String.toUtf8Bytes(input)).toThrow(src_1.InvalidUtf16StringError);
+        expect(() => Utf16String.toUtf8Bytes(input)).toThrow(InvalidUtf16StringError);
     });
 });
 describe("Utf16String.toUtf16Bytes", () => {
@@ -260,7 +258,7 @@ describe("Utf16String.toUtf16Bytes", () => {
         ["\uD834\uDD1E", new Uint8Array([0xD8, 0x34, 0xDD, 0x1E])],
         ["\u0000", new Uint8Array([0x0, 0x0])],
     ])("Given %j returns %p", (input, output) => {
-        expect(src_1.Utf16String.toUtf16Bytes(input)).toEqual(output);
+        expect(Utf16String.toUtf16Bytes(input)).toEqual(output);
     });
     test.each([
         "\uD800",
@@ -269,7 +267,7 @@ describe("Utf16String.toUtf16Bytes", () => {
         "\uDC00",
         "\uDC00a"
     ])("Given %p throws", (input) => {
-        expect(() => src_1.Utf16String.toUtf16Bytes(input)).toThrow(src_1.InvalidUtf16StringError);
+        expect(() => Utf16String.toUtf16Bytes(input)).toThrow(InvalidUtf16StringError);
     });
 });
 describe("Utf16String.toUtf16Bytes LittleEndian", () => {
@@ -281,7 +279,7 @@ describe("Utf16String.toUtf16Bytes LittleEndian", () => {
         ["\uD834\uDD1E", new Uint8Array([0x34, 0xD8, 0x1E, 0xDD])],
         ["\u0000", new Uint8Array([0x0, 0x0])],
     ])("Given %j returns %p", (input, output) => {
-        expect(src_1.Utf16String.toUtf16Bytes(input, true)).toEqual(output);
+        expect(Utf16String.toUtf16Bytes(input, true)).toEqual(output);
     });
     test.each([
         "\uD800",
@@ -290,7 +288,7 @@ describe("Utf16String.toUtf16Bytes LittleEndian", () => {
         "\uDC00",
         "\uDC00a"
     ])("Given %p throws", (input) => {
-        expect(() => src_1.Utf16String.toUtf16Bytes(input, true)).toThrow(src_1.InvalidUtf16StringError);
+        expect(() => Utf16String.toUtf16Bytes(input, true)).toThrow(InvalidUtf16StringError);
     });
 });
 describe("Utf16String.toUtf32Bytes", () => {
@@ -302,7 +300,7 @@ describe("Utf16String.toUtf32Bytes", () => {
         ["\uD834\uDD1E", new Uint8Array([0x0, 0x01, 0xD1, 0x1E])],
         ["\u0000", new Uint8Array([0x0, 0x0, 0x0, 0x0])],
     ])("Given %j returns %p", (input, output) => {
-        expect(src_1.Utf16String.toUtf32Bytes(input)).toEqual(output);
+        expect(Utf16String.toUtf32Bytes(input)).toEqual(output);
     });
     test.each([
         "\uD800",
@@ -311,7 +309,7 @@ describe("Utf16String.toUtf32Bytes", () => {
         "\uDC00",
         "\uDC00a"
     ])("Given %p throws", (input) => {
-        expect(() => src_1.Utf16String.toUtf32Bytes(input)).toThrow(src_1.InvalidUtf16StringError);
+        expect(() => Utf16String.toUtf32Bytes(input)).toThrow(InvalidUtf16StringError);
     });
 });
 describe("Utf16String.toUtf32Bytes LittleEndian", () => {
@@ -323,7 +321,7 @@ describe("Utf16String.toUtf32Bytes LittleEndian", () => {
         ["\uD834\uDD1E", new Uint8Array([0x1E, 0xD1, 0x01, 0x0])],
         ["\0", new Uint8Array([0x0, 0x0, 0x0, 0x0])],
     ])("Given %j returns %p", (input, output) => {
-        expect(src_1.Utf16String.toUtf32Bytes(input, true)).toEqual(output);
+        expect(Utf16String.toUtf32Bytes(input, true)).toEqual(output);
     });
     test.each([
         "\uD800",
@@ -332,7 +330,7 @@ describe("Utf16String.toUtf32Bytes LittleEndian", () => {
         "\uDC00",
         "\uDC00a"
     ])("Given %p throws", (input) => {
-        expect(() => src_1.Utf16String.toUtf32Bytes(input, true)).toThrow(src_1.InvalidUtf16StringError);
+        expect(() => Utf16String.toUtf32Bytes(input, true)).toThrow(InvalidUtf16StringError);
     });
 });
 describe("Utf16String.fromUtf8Bytes", () => {
@@ -346,13 +344,13 @@ describe("Utf16String.fromUtf8Bytes", () => {
         [new Uint8Array([0xF0, 0x9D, 0x84, 0x9E]), "\uD834\uDD1E"],
         [new Uint8Array([0x0]), "\0"],
     ])("Given %p returns %j", (input, output) => {
-        expect(src_1.Utf16String.fromUtf8Bytes(input)).toEqual(output);
+        expect(Utf16String.fromUtf8Bytes(input)).toEqual(output);
     });
     // TODO - gives a TypeError instead of a StringDecodingError when running with Jest
     test.each([
         new Uint8Array([0xFF])
     ])("Given %p throws", (input) => {
-        expect(() => src_1.Utf16String.fromUtf8Bytes(input)).toThrow();
+        expect(() => Utf16String.fromUtf8Bytes(input)).toThrow();
     });
 });
 describe("Utf16String.fromUtf8Bytes SkipFirstBom", () => {
@@ -365,7 +363,7 @@ describe("Utf16String.fromUtf8Bytes SkipFirstBom", () => {
         [new Uint8Array([0x0]), "\0"],
         [new Uint8Array([0xEF, 0xBB, 0xBF, 0x0]), "\0"],
     ])("Given %p returns %j", (input, output) => {
-        expect(src_1.Utf16String.fromUtf8Bytes(input, true)).toEqual(output);
+        expect(Utf16String.fromUtf8Bytes(input, true)).toEqual(output);
     });
 });
 describe("Utf16String.fromUtf16Bytes", () => {
@@ -381,7 +379,7 @@ describe("Utf16String.fromUtf16Bytes", () => {
         [new Uint8Array([0x0, 0x0]), false, "\0"],
         [new Uint8Array([0xFE, 0xFF, 0x0, 0x0]), true, "\0"],
     ])("Given %p and %p returns %j", (input, skipFirstBom, output) => {
-        expect(src_1.Utf16String.fromUtf16Bytes(input, false, skipFirstBom)).toEqual(output);
+        expect(Utf16String.fromUtf16Bytes(input, false, skipFirstBom)).toEqual(output);
     });
     // TODO - gives a TypeError instead of a StringDecodingError when running with Jest
     test.each([
@@ -390,7 +388,7 @@ describe("Utf16String.fromUtf16Bytes", () => {
         new Uint8Array([0xD8, 0x34]),
         new Uint8Array([0xD8, 0x34, 0xD8, 0x34]),
     ])("Given %p throws", (input) => {
-        expect(() => src_1.Utf16String.fromUtf16Bytes(input, false)).toThrow();
+        expect(() => Utf16String.fromUtf16Bytes(input, false)).toThrow();
     });
 });
 describe("Utf16String.fromUtf16Bytes LittleEndian", () => {
@@ -406,7 +404,7 @@ describe("Utf16String.fromUtf16Bytes LittleEndian", () => {
         [new Uint8Array([0x0, 0x0]), false, "\0"],
         [new Uint8Array([0xFF, 0xFE, 0x0, 0x0]), true, "\0"],
     ])("Given %p and %p returns %j", (input, skipFirstBom, output) => {
-        expect(src_1.Utf16String.fromUtf16Bytes(input, true, skipFirstBom)).toEqual(output);
+        expect(Utf16String.fromUtf16Bytes(input, true, skipFirstBom)).toEqual(output);
     });
     // TODO - gives a TypeError instead of a StringDecodingError when running with Jest
     // see https://github.com/facebook/jest/issues/2549 and https://github.com/nodejs/node/issues/31852 and https://backend.cafe/should-you-use-jest-as-a-testing-library
@@ -424,7 +422,7 @@ describe("Utf16String.fromUtf16Bytes LittleEndian", () => {
         new Uint8Array([0x34, 0xD8]),
         new Uint8Array([0x34, 0xD8, 0x34, 0xD8]),
     ])("Given %p throws", (input) => {
-        expect(() => src_1.Utf16String.fromUtf16Bytes(input, true)).toThrow();
+        expect(() => Utf16String.fromUtf16Bytes(input, true)).toThrow();
     });
 });
 describe("Utf16String.fromUtf32Bytes", () => {
@@ -440,7 +438,7 @@ describe("Utf16String.fromUtf32Bytes", () => {
         [new Uint8Array([0x0, 0x0, 0x0, 0x0]), false, "\0"],
         [new Uint8Array([0x0, 0x0, 0xFE, 0xFF, 0x0, 0x0, 0x0, 0x0]), true, "\0"],
     ])("Given %p and %p returns %j", (input, skipFirstBom, output) => {
-        expect(src_1.Utf16String.fromUtf32Bytes(input, false, skipFirstBom)).toEqual(output);
+        expect(Utf16String.fromUtf32Bytes(input, false, skipFirstBom)).toEqual(output);
     });
     test.each([
         new Uint8Array([0xFF]),
@@ -454,7 +452,7 @@ describe("Utf16String.fromUtf32Bytes", () => {
         new Uint8Array([0x0, 0x0, 0xD8, 0x0]),
         new Uint8Array([0x0, 0x11, 0x00, 0x0]),
     ])("Given %p throws", (input) => {
-        expect(() => src_1.Utf16String.fromUtf32Bytes(input, false)).toThrow(src_1.StringDecodingError);
+        expect(() => Utf16String.fromUtf32Bytes(input, false)).toThrow(StringDecodingError);
     });
 });
 describe("Utf16String.fromUtf32Bytes LittleEndian", () => {
@@ -470,7 +468,7 @@ describe("Utf16String.fromUtf32Bytes LittleEndian", () => {
         [new Uint8Array([0x0, 0x0, 0x0, 0x0]), false, "\0"],
         [new Uint8Array([0xFF, 0xFE, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0]), true, "\0"],
     ])("Given %p and %p returns %j", (input, skipFirstBom, output) => {
-        expect(src_1.Utf16String.fromUtf32Bytes(input, true, skipFirstBom)).toEqual(output);
+        expect(Utf16String.fromUtf32Bytes(input, true, skipFirstBom)).toEqual(output);
     });
     test.each([
         new Uint8Array([0xFF]),
@@ -484,7 +482,7 @@ describe("Utf16String.fromUtf32Bytes LittleEndian", () => {
         new Uint8Array([0x0, 0xD8, 0x0, 0x0]),
         new Uint8Array([0x0, 0x0, 0x11, 0x0]),
     ])("Given %p throws", (input) => {
-        expect(() => src_1.Utf16String.fromUtf32Bytes(input, true)).toThrow(src_1.StringDecodingError);
+        expect(() => Utf16String.fromUtf32Bytes(input, true)).toThrow(StringDecodingError);
     });
 });
 describe("Utf16String.fromCodePointArray", () => {
@@ -498,82 +496,82 @@ describe("Utf16String.fromCodePointArray", () => {
         [[0x0], "\0"],
         [[0x0, 0x0], "\0\0"],
     ])("Given %p returns %j", (input, output) => {
-        expect(src_1.Utf16String.fromCodePointArray(input)).toEqual(output);
+        expect(Utf16String.fromCodePointArray(input)).toEqual(output);
     });
     test.each([
         [[0x110000]],
         [[0xD800]],
     ])("Given %p throws", (input) => {
-        expect(() => src_1.Utf16String.fromCodePointArray(input)).toThrow(src_1.StringDecodingError);
+        expect(() => Utf16String.fromCodePointArray(input)).toThrow(StringDecodingError);
     });
 });
 // ----------------------------------------------------------------------
 describe("ReliableTxtEncoder.encode", () => {
     test.each([
-        ["", src_1.ReliableTxtEncoding.Utf8, new Uint8Array([0xEF, 0xBB, 0xBF])],
-        ["a", src_1.ReliableTxtEncoding.Utf8, new Uint8Array([0xEF, 0xBB, 0xBF, 0x61])],
-        ["", src_1.ReliableTxtEncoding.Utf16, new Uint8Array([0xFE, 0xFF])],
-        ["a", src_1.ReliableTxtEncoding.Utf16, new Uint8Array([0xFE, 0xFF, 0x0, 0x61])],
-        ["", src_1.ReliableTxtEncoding.Utf16Reverse, new Uint8Array([0xFF, 0xFE])],
-        ["a", src_1.ReliableTxtEncoding.Utf16Reverse, new Uint8Array([0xFF, 0xFE, 0x61, 0x0])],
-        ["", src_1.ReliableTxtEncoding.Utf32, new Uint8Array([0x0, 0x0, 0xFE, 0xFF])],
-        ["a", src_1.ReliableTxtEncoding.Utf32, new Uint8Array([0x0, 0x0, 0xFE, 0xFF, 0x0, 0x0, 0x0, 0x61])],
+        ["", ReliableTxtEncoding.Utf8, new Uint8Array([0xEF, 0xBB, 0xBF])],
+        ["a", ReliableTxtEncoding.Utf8, new Uint8Array([0xEF, 0xBB, 0xBF, 0x61])],
+        ["", ReliableTxtEncoding.Utf16, new Uint8Array([0xFE, 0xFF])],
+        ["a", ReliableTxtEncoding.Utf16, new Uint8Array([0xFE, 0xFF, 0x0, 0x61])],
+        ["", ReliableTxtEncoding.Utf16Reverse, new Uint8Array([0xFF, 0xFE])],
+        ["a", ReliableTxtEncoding.Utf16Reverse, new Uint8Array([0xFF, 0xFE, 0x61, 0x0])],
+        ["", ReliableTxtEncoding.Utf32, new Uint8Array([0x0, 0x0, 0xFE, 0xFF])],
+        ["a", ReliableTxtEncoding.Utf32, new Uint8Array([0x0, 0x0, 0xFE, 0xFF, 0x0, 0x0, 0x0, 0x61])],
     ])("Given %p and %p returns %p", (input, encoding, output) => {
-        expect(src_1.ReliableTxtEncoder.encode(input, encoding)).toEqual(output);
+        expect(ReliableTxtEncoder.encode(input, encoding)).toEqual(output);
     });
     test("Invalid encoding", () => {
-        expect(() => src_1.ReliableTxtEncoder.encode("", 4)).toThrow(RangeError);
+        expect(() => ReliableTxtEncoder.encode("", 4)).toThrow(RangeError);
     });
 });
 // ----------------------------------------------------------------------
 describe("ReliableTxtDecoder.getEncodingOrNull", () => {
     test.each([
-        [new Uint8Array([0xEF, 0xBB, 0xBF]), src_1.ReliableTxtEncoding.Utf8],
-        [new Uint8Array([0xEF, 0xBB, 0xBF, 0x61]), src_1.ReliableTxtEncoding.Utf8],
-        [new Uint8Array([0xFE, 0xFF]), src_1.ReliableTxtEncoding.Utf16],
-        [new Uint8Array([0xFE, 0xFF, 0x0, 0x61]), src_1.ReliableTxtEncoding.Utf16],
-        [new Uint8Array([0xFF, 0xFE]), src_1.ReliableTxtEncoding.Utf16Reverse],
-        [new Uint8Array([0xFF, 0xFE, 0x61, 0x0]), src_1.ReliableTxtEncoding.Utf16Reverse],
-        [new Uint8Array([0x0, 0x0, 0xFE, 0xFF]), src_1.ReliableTxtEncoding.Utf32],
-        [new Uint8Array([0x0, 0x0, 0xFE, 0xFF, 0x0, 0x0, 0x0, 0x61]), src_1.ReliableTxtEncoding.Utf32],
+        [new Uint8Array([0xEF, 0xBB, 0xBF]), ReliableTxtEncoding.Utf8],
+        [new Uint8Array([0xEF, 0xBB, 0xBF, 0x61]), ReliableTxtEncoding.Utf8],
+        [new Uint8Array([0xFE, 0xFF]), ReliableTxtEncoding.Utf16],
+        [new Uint8Array([0xFE, 0xFF, 0x0, 0x61]), ReliableTxtEncoding.Utf16],
+        [new Uint8Array([0xFF, 0xFE]), ReliableTxtEncoding.Utf16Reverse],
+        [new Uint8Array([0xFF, 0xFE, 0x61, 0x0]), ReliableTxtEncoding.Utf16Reverse],
+        [new Uint8Array([0x0, 0x0, 0xFE, 0xFF]), ReliableTxtEncoding.Utf32],
+        [new Uint8Array([0x0, 0x0, 0xFE, 0xFF, 0x0, 0x0, 0x0, 0x61]), ReliableTxtEncoding.Utf32],
         [new Uint8Array([]), null],
         [new Uint8Array([0x0]), null],
     ])("Given %p returns %p", (input, output) => {
-        expect(src_1.ReliableTxtDecoder.getEncodingOrNull(input)).toEqual(output);
+        expect(ReliableTxtDecoder.getEncodingOrNull(input)).toEqual(output);
     });
 });
 describe("ReliableTxtDecoder.getEncoding", () => {
     test.each([
-        [new Uint8Array([0xEF, 0xBB, 0xBF]), src_1.ReliableTxtEncoding.Utf8],
-        [new Uint8Array([0xEF, 0xBB, 0xBF, 0x61]), src_1.ReliableTxtEncoding.Utf8],
-        [new Uint8Array([0xFE, 0xFF]), src_1.ReliableTxtEncoding.Utf16],
-        [new Uint8Array([0xFE, 0xFF, 0x0, 0x61]), src_1.ReliableTxtEncoding.Utf16],
-        [new Uint8Array([0xFF, 0xFE]), src_1.ReliableTxtEncoding.Utf16Reverse],
-        [new Uint8Array([0xFF, 0xFE, 0x61, 0x0]), src_1.ReliableTxtEncoding.Utf16Reverse],
-        [new Uint8Array([0x0, 0x0, 0xFE, 0xFF]), src_1.ReliableTxtEncoding.Utf32],
-        [new Uint8Array([0x0, 0x0, 0xFE, 0xFF, 0x0, 0x0, 0x0, 0x61]), src_1.ReliableTxtEncoding.Utf32],
+        [new Uint8Array([0xEF, 0xBB, 0xBF]), ReliableTxtEncoding.Utf8],
+        [new Uint8Array([0xEF, 0xBB, 0xBF, 0x61]), ReliableTxtEncoding.Utf8],
+        [new Uint8Array([0xFE, 0xFF]), ReliableTxtEncoding.Utf16],
+        [new Uint8Array([0xFE, 0xFF, 0x0, 0x61]), ReliableTxtEncoding.Utf16],
+        [new Uint8Array([0xFF, 0xFE]), ReliableTxtEncoding.Utf16Reverse],
+        [new Uint8Array([0xFF, 0xFE, 0x61, 0x0]), ReliableTxtEncoding.Utf16Reverse],
+        [new Uint8Array([0x0, 0x0, 0xFE, 0xFF]), ReliableTxtEncoding.Utf32],
+        [new Uint8Array([0x0, 0x0, 0xFE, 0xFF, 0x0, 0x0, 0x0, 0x61]), ReliableTxtEncoding.Utf32],
     ])("Given %p returns %p", (input, output) => {
-        expect(src_1.ReliableTxtDecoder.getEncoding(input)).toEqual(output);
+        expect(ReliableTxtDecoder.getEncoding(input)).toEqual(output);
     });
     test.each([
         [new Uint8Array([])],
         [new Uint8Array([0x0])],
     ])("Given %p throws", (input) => {
-        expect(() => src_1.ReliableTxtDecoder.getEncoding(input)).toThrow(src_1.NoReliableTxtPreambleError);
+        expect(() => ReliableTxtDecoder.getEncoding(input)).toThrow(NoReliableTxtPreambleError);
     });
 });
 describe("ReliableTxtDecoder.decode", () => {
     test.each([
-        [new Uint8Array([0xEF, 0xBB, 0xBF]), src_1.ReliableTxtEncoding.Utf8, ""],
-        [new Uint8Array([0xEF, 0xBB, 0xBF, 0x61]), src_1.ReliableTxtEncoding.Utf8, "a"],
-        [new Uint8Array([0xFE, 0xFF]), src_1.ReliableTxtEncoding.Utf16, ""],
-        [new Uint8Array([0xFE, 0xFF, 0x0, 0x61]), src_1.ReliableTxtEncoding.Utf16, "a"],
-        [new Uint8Array([0xFF, 0xFE]), src_1.ReliableTxtEncoding.Utf16Reverse, ""],
-        [new Uint8Array([0xFF, 0xFE, 0x61, 0x0]), src_1.ReliableTxtEncoding.Utf16Reverse, "a"],
-        [new Uint8Array([0x0, 0x0, 0xFE, 0xFF]), src_1.ReliableTxtEncoding.Utf32, ""],
-        [new Uint8Array([0x0, 0x0, 0xFE, 0xFF, 0x0, 0x0, 0x0, 0x61]), src_1.ReliableTxtEncoding.Utf32, "a"],
+        [new Uint8Array([0xEF, 0xBB, 0xBF]), ReliableTxtEncoding.Utf8, ""],
+        [new Uint8Array([0xEF, 0xBB, 0xBF, 0x61]), ReliableTxtEncoding.Utf8, "a"],
+        [new Uint8Array([0xFE, 0xFF]), ReliableTxtEncoding.Utf16, ""],
+        [new Uint8Array([0xFE, 0xFF, 0x0, 0x61]), ReliableTxtEncoding.Utf16, "a"],
+        [new Uint8Array([0xFF, 0xFE]), ReliableTxtEncoding.Utf16Reverse, ""],
+        [new Uint8Array([0xFF, 0xFE, 0x61, 0x0]), ReliableTxtEncoding.Utf16Reverse, "a"],
+        [new Uint8Array([0x0, 0x0, 0xFE, 0xFF]), ReliableTxtEncoding.Utf32, ""],
+        [new Uint8Array([0x0, 0x0, 0xFE, 0xFF, 0x0, 0x0, 0x0, 0x61]), ReliableTxtEncoding.Utf32, "a"],
     ])("Given %p returns %p and %p", (input, encoding, text) => {
-        const document = src_1.ReliableTxtDecoder.decode(input);
+        const document = ReliableTxtDecoder.decode(input);
         expect(document.encoding).toEqual(encoding);
         expect(document.text).toEqual(text);
     });
@@ -581,63 +579,63 @@ describe("ReliableTxtDecoder.decode", () => {
         [new Uint8Array([])],
         [new Uint8Array([0x0])],
     ])("Given %p throws", (input) => {
-        expect(() => src_1.ReliableTxtDecoder.decode(input)).toThrow(src_1.NoReliableTxtPreambleError);
+        expect(() => ReliableTxtDecoder.decode(input)).toThrow(NoReliableTxtPreambleError);
     });
 });
 describe("ReliableTxtDecoder.decodePart", () => {
     test.each([
-        [new Uint8Array([]), src_1.ReliableTxtEncoding.Utf8, ""],
-        [new Uint8Array([0xEF, 0xBB, 0xBF]), src_1.ReliableTxtEncoding.Utf8, "\uFEFF"],
-        [new Uint8Array([0xEF, 0xBB, 0xBF, 0x61]), src_1.ReliableTxtEncoding.Utf8, "\uFEFFa"],
-        [new Uint8Array([0x61]), src_1.ReliableTxtEncoding.Utf8, "a"],
-        [new Uint8Array([]), src_1.ReliableTxtEncoding.Utf16, ""],
-        [new Uint8Array([0xFE, 0xFF]), src_1.ReliableTxtEncoding.Utf16, "\uFEFF"],
-        [new Uint8Array([0xFE, 0xFF, 0x0, 0x61]), src_1.ReliableTxtEncoding.Utf16, "\uFEFFa"],
-        [new Uint8Array([0x0, 0x61]), src_1.ReliableTxtEncoding.Utf16, "a"],
-        [new Uint8Array([]), src_1.ReliableTxtEncoding.Utf16Reverse, ""],
-        [new Uint8Array([0xFF, 0xFE]), src_1.ReliableTxtEncoding.Utf16Reverse, "\uFEFF"],
-        [new Uint8Array([0xFF, 0xFE, 0x61, 0x0]), src_1.ReliableTxtEncoding.Utf16Reverse, "\uFEFFa"],
-        [new Uint8Array([0x61, 0x0]), src_1.ReliableTxtEncoding.Utf16Reverse, "a"],
-        [new Uint8Array([]), src_1.ReliableTxtEncoding.Utf32, ""],
-        [new Uint8Array([0x0, 0x0, 0xFE, 0xFF]), src_1.ReliableTxtEncoding.Utf32, "\uFEFF"],
-        [new Uint8Array([0x0, 0x0, 0xFE, 0xFF, 0x0, 0x0, 0x0, 0x61]), src_1.ReliableTxtEncoding.Utf32, "\uFEFFa"],
-        [new Uint8Array([0x0, 0x0, 0x0, 0x61]), src_1.ReliableTxtEncoding.Utf32, "a"],
+        [new Uint8Array([]), ReliableTxtEncoding.Utf8, ""],
+        [new Uint8Array([0xEF, 0xBB, 0xBF]), ReliableTxtEncoding.Utf8, "\uFEFF"],
+        [new Uint8Array([0xEF, 0xBB, 0xBF, 0x61]), ReliableTxtEncoding.Utf8, "\uFEFFa"],
+        [new Uint8Array([0x61]), ReliableTxtEncoding.Utf8, "a"],
+        [new Uint8Array([]), ReliableTxtEncoding.Utf16, ""],
+        [new Uint8Array([0xFE, 0xFF]), ReliableTxtEncoding.Utf16, "\uFEFF"],
+        [new Uint8Array([0xFE, 0xFF, 0x0, 0x61]), ReliableTxtEncoding.Utf16, "\uFEFFa"],
+        [new Uint8Array([0x0, 0x61]), ReliableTxtEncoding.Utf16, "a"],
+        [new Uint8Array([]), ReliableTxtEncoding.Utf16Reverse, ""],
+        [new Uint8Array([0xFF, 0xFE]), ReliableTxtEncoding.Utf16Reverse, "\uFEFF"],
+        [new Uint8Array([0xFF, 0xFE, 0x61, 0x0]), ReliableTxtEncoding.Utf16Reverse, "\uFEFFa"],
+        [new Uint8Array([0x61, 0x0]), ReliableTxtEncoding.Utf16Reverse, "a"],
+        [new Uint8Array([]), ReliableTxtEncoding.Utf32, ""],
+        [new Uint8Array([0x0, 0x0, 0xFE, 0xFF]), ReliableTxtEncoding.Utf32, "\uFEFF"],
+        [new Uint8Array([0x0, 0x0, 0xFE, 0xFF, 0x0, 0x0, 0x0, 0x61]), ReliableTxtEncoding.Utf32, "\uFEFFa"],
+        [new Uint8Array([0x0, 0x0, 0x0, 0x61]), ReliableTxtEncoding.Utf32, "a"],
     ])("Given %p and %p returns %p", (input, encoding, output) => {
-        expect(src_1.ReliableTxtDecoder.decodePart(input, encoding)).toEqual(output);
+        expect(ReliableTxtDecoder.decodePart(input, encoding)).toEqual(output);
     });
-    expect(() => src_1.ReliableTxtDecoder.decodePart(new Uint8Array([]), 4)).toThrow(RangeError);
+    expect(() => ReliableTxtDecoder.decodePart(new Uint8Array([]), 4)).toThrow(RangeError);
 });
 // ----------------------------------------------------------------------
 describe("ReliableTxtDocument Constructor", () => {
     test("Empty", () => {
-        const document = new src_1.ReliableTxtDocument();
+        const document = new ReliableTxtDocument();
         expect(document.text).toEqual("");
-        expect(document.encoding).toEqual(src_1.ReliableTxtEncoding.Utf8);
+        expect(document.encoding).toEqual(ReliableTxtEncoding.Utf8);
     });
     test("Text", () => {
-        const document = new src_1.ReliableTxtDocument("abc");
+        const document = new ReliableTxtDocument("abc");
         expect(document.text).toEqual("abc");
-        expect(document.encoding).toEqual(src_1.ReliableTxtEncoding.Utf8);
+        expect(document.encoding).toEqual(ReliableTxtEncoding.Utf8);
     });
     test("TextAndEncoding", () => {
-        const document = new src_1.ReliableTxtDocument("abc", src_1.ReliableTxtEncoding.Utf16);
+        const document = new ReliableTxtDocument("abc", ReliableTxtEncoding.Utf16);
         expect(document.text).toEqual("abc");
-        expect(document.encoding).toEqual(src_1.ReliableTxtEncoding.Utf16);
+        expect(document.encoding).toEqual(ReliableTxtEncoding.Utf16);
     });
 });
 describe("ReliableTxtDocument.getBytes + fromBytes", () => {
     test.each([
-        ["", src_1.ReliableTxtEncoding.Utf8, new Uint8Array([0xEF, 0xBB, 0xBF])],
-        ["", src_1.ReliableTxtEncoding.Utf16, new Uint8Array([0xFE, 0xFF])],
-        ["", src_1.ReliableTxtEncoding.Utf16Reverse, new Uint8Array([0xFF, 0xFE])],
-        ["", src_1.ReliableTxtEncoding.Utf32, new Uint8Array([0x0, 0x0, 0xFE, 0xFF])],
-        ["a", src_1.ReliableTxtEncoding.Utf8, new Uint8Array([0xEF, 0xBB, 0xBF, 0x61])],
-        ["a", src_1.ReliableTxtEncoding.Utf16, new Uint8Array([0xFE, 0xFF, 0x0, 0x61])],
-        ["a", src_1.ReliableTxtEncoding.Utf16Reverse, new Uint8Array([0xFF, 0xFE, 0x61, 0x0])],
-        ["a", src_1.ReliableTxtEncoding.Utf32, new Uint8Array([0x0, 0x0, 0xFE, 0xFF, 0x0, 0x0, 0x0, 0x61])],
+        ["", ReliableTxtEncoding.Utf8, new Uint8Array([0xEF, 0xBB, 0xBF])],
+        ["", ReliableTxtEncoding.Utf16, new Uint8Array([0xFE, 0xFF])],
+        ["", ReliableTxtEncoding.Utf16Reverse, new Uint8Array([0xFF, 0xFE])],
+        ["", ReliableTxtEncoding.Utf32, new Uint8Array([0x0, 0x0, 0xFE, 0xFF])],
+        ["a", ReliableTxtEncoding.Utf8, new Uint8Array([0xEF, 0xBB, 0xBF, 0x61])],
+        ["a", ReliableTxtEncoding.Utf16, new Uint8Array([0xFE, 0xFF, 0x0, 0x61])],
+        ["a", ReliableTxtEncoding.Utf16Reverse, new Uint8Array([0xFF, 0xFE, 0x61, 0x0])],
+        ["a", ReliableTxtEncoding.Utf32, new Uint8Array([0x0, 0x0, 0xFE, 0xFF, 0x0, 0x0, 0x0, 0x61])],
     ])("Given %p and %p returns %p", (input, encoding, output) => {
-        expect(new src_1.ReliableTxtDocument(input, encoding).getBytes()).toEqual(output);
-        const document = src_1.ReliableTxtDocument.fromBytes(output);
+        expect(new ReliableTxtDocument(input, encoding).getBytes()).toEqual(output);
+        const document = ReliableTxtDocument.fromBytes(output);
         expect(document.encoding).toBe(encoding);
         expect(document.text).toBe(input);
     });
@@ -652,16 +650,16 @@ describe("ReliableTxtDocument.setLines + getLines + fromLines", () => {
         [["Line1", "", "Line3"], "Line1\n\nLine3"],
         [["Line1", "Line2", ""], "Line1\nLine2\n"],
     ])("Given %p returns %p", (input, output) => {
-        const document = new src_1.ReliableTxtDocument();
+        const document = new ReliableTxtDocument();
         document.setLines(input);
         expect(document.text).toEqual(output);
         expect(document.getLines()).toEqual(input);
-        const fromDocument = src_1.ReliableTxtDocument.fromLines(input);
+        const fromDocument = ReliableTxtDocument.fromLines(input);
         expect(fromDocument.text).toEqual(output);
         expect(fromDocument.getLines()).toEqual(input);
     });
     test("Empty", () => {
-        const document = new src_1.ReliableTxtDocument();
+        const document = new ReliableTxtDocument();
         document.setLines([]);
         expect(document.text).toEqual("");
         expect(document.getLines()).toEqual([""]);
@@ -669,12 +667,12 @@ describe("ReliableTxtDocument.setLines + getLines + fromLines", () => {
 });
 describe("ReliableTxtDocument.fromLines Encoding", () => {
     test.each([
-        [src_1.ReliableTxtEncoding.Utf8],
-        [src_1.ReliableTxtEncoding.Utf16],
-        [src_1.ReliableTxtEncoding.Utf16Reverse],
-        [src_1.ReliableTxtEncoding.Utf32],
+        [ReliableTxtEncoding.Utf8],
+        [ReliableTxtEncoding.Utf16],
+        [ReliableTxtEncoding.Utf16Reverse],
+        [ReliableTxtEncoding.Utf32],
     ])("Given %p returns %p", (encoding) => {
-        const fromDocument = src_1.ReliableTxtDocument.fromLines([], encoding);
+        const fromDocument = ReliableTxtDocument.fromLines([], encoding);
         expect(fromDocument.encoding).toEqual(encoding);
     });
 });
@@ -686,23 +684,23 @@ describe("ReliableTxtDocument.setCodePoints + getCodePoints + fromCodePoints", (
         [[0x6771], "\u6771"],
         [[0x1D11E], "\uD834\uDD1E"],
     ])("Given %p returns %p", (input, output) => {
-        const document = new src_1.ReliableTxtDocument();
+        const document = new ReliableTxtDocument();
         document.setCodePoints(input);
         expect(document.text).toEqual(output);
         expect(document.getCodePoints()).toEqual(input);
-        const fromDocument = src_1.ReliableTxtDocument.fromCodePoints(input);
+        const fromDocument = ReliableTxtDocument.fromCodePoints(input);
         expect(fromDocument.text).toEqual(output);
         expect(fromDocument.getCodePoints()).toEqual(input);
     });
 });
 describe("ReliableTxtDocument.fromCodePoints Encoding", () => {
     test.each([
-        [src_1.ReliableTxtEncoding.Utf8],
-        [src_1.ReliableTxtEncoding.Utf16],
-        [src_1.ReliableTxtEncoding.Utf16Reverse],
-        [src_1.ReliableTxtEncoding.Utf32],
+        [ReliableTxtEncoding.Utf8],
+        [ReliableTxtEncoding.Utf16],
+        [ReliableTxtEncoding.Utf16Reverse],
+        [ReliableTxtEncoding.Utf32],
     ])("Given %p returns %p", (encoding) => {
-        const fromDocument = src_1.ReliableTxtDocument.fromCodePoints([], encoding);
+        const fromDocument = ReliableTxtDocument.fromCodePoints([], encoding);
         expect(fromDocument.encoding).toEqual(encoding);
     });
 });
@@ -714,12 +712,12 @@ describe("ReliableTxtDocument.toBase64String + fromBase64String", () => {
     ])("Given %p", (input) => {
         for (let i = 0; i < 3; i++) {
             const encoding = i;
-            const document = new src_1.ReliableTxtDocument(input, encoding);
+            const document = new ReliableTxtDocument(input, encoding);
             expect(document.encoding).toEqual(encoding);
             const base64Str = document.toBase64String();
             expect(base64Str.startsWith("Base64|")).toEqual(true);
             expect(base64Str.endsWith("|")).toEqual(true);
-            const fromDocument = src_1.ReliableTxtDocument.fromBase64String(base64Str);
+            const fromDocument = ReliableTxtDocument.fromBase64String(base64Str);
             expect(fromDocument.text).toEqual(input);
             expect(fromDocument.encoding).toEqual(encoding);
         }
@@ -727,30 +725,30 @@ describe("ReliableTxtDocument.toBase64String + fromBase64String", () => {
 });
 describe("ReliableTxtDocument.toBase64String", () => {
     test.each([
-        ["", src_1.ReliableTxtEncoding.Utf8, "Base64|77u/|"],
-        ["Many hands make light work.", src_1.ReliableTxtEncoding.Utf8, "Base64|77u/TWFueSBoYW5kcyBtYWtlIGxpZ2h0IHdvcmsu|"],
-        ["\u0000", src_1.ReliableTxtEncoding.Utf8, "Base64|77u/AA|"],
-        ["Man", src_1.ReliableTxtEncoding.Utf8, "Base64|77u/TWFu|"],
-        ["a¥ßä€東𝄞", src_1.ReliableTxtEncoding.Utf8, "Base64|77u/YcKlw5/DpOKCrOadsfCdhJ4|"],
-        ["Man", src_1.ReliableTxtEncoding.Utf16, "Base64|/v8ATQBhAG4|"],
-        ["Man", src_1.ReliableTxtEncoding.Utf16Reverse, "Base64|//5NAGEAbgA|"],
-        ["Man", src_1.ReliableTxtEncoding.Utf32, "Base64|AAD+/wAAAE0AAABhAAAAbg|"],
+        ["", ReliableTxtEncoding.Utf8, "Base64|77u/|"],
+        ["Many hands make light work.", ReliableTxtEncoding.Utf8, "Base64|77u/TWFueSBoYW5kcyBtYWtlIGxpZ2h0IHdvcmsu|"],
+        ["\u0000", ReliableTxtEncoding.Utf8, "Base64|77u/AA|"],
+        ["Man", ReliableTxtEncoding.Utf8, "Base64|77u/TWFu|"],
+        ["a¥ßä€東𝄞", ReliableTxtEncoding.Utf8, "Base64|77u/YcKlw5/DpOKCrOadsfCdhJ4|"],
+        ["Man", ReliableTxtEncoding.Utf16, "Base64|/v8ATQBhAG4|"],
+        ["Man", ReliableTxtEncoding.Utf16Reverse, "Base64|//5NAGEAbgA|"],
+        ["Man", ReliableTxtEncoding.Utf32, "Base64|AAD+/wAAAE0AAABhAAAAbg|"],
     ])("Given %j and %p returns %p", (input1, input2, output) => {
-        const document = new src_1.ReliableTxtDocument(input1, input2);
+        const document = new ReliableTxtDocument(input1, input2);
         expect(document.toBase64String()).toEqual(output);
     });
 });
 describe("ReliableTxtDocument.fromBase64String", () => {
     test.each([
-        ["Base64|77u/|", "", src_1.ReliableTxtEncoding.Utf8],
-        ["Base64|77u/AA|", "\u0000", src_1.ReliableTxtEncoding.Utf8],
-        ["Base64|77u/TWFu|", "Man", src_1.ReliableTxtEncoding.Utf8],
-        ["Base64|77u/8J2Eng|", "𝄞", src_1.ReliableTxtEncoding.Utf8],
-        ["Base64|/v8ATQBhAG4|", "Man", src_1.ReliableTxtEncoding.Utf16],
-        ["Base64|//5NAGEAbgA|", "Man", src_1.ReliableTxtEncoding.Utf16Reverse],
-        ["Base64|AAD+/wAAAE0AAABhAAAAbg|", "Man", src_1.ReliableTxtEncoding.Utf32],
+        ["Base64|77u/|", "", ReliableTxtEncoding.Utf8],
+        ["Base64|77u/AA|", "\u0000", ReliableTxtEncoding.Utf8],
+        ["Base64|77u/TWFu|", "Man", ReliableTxtEncoding.Utf8],
+        ["Base64|77u/8J2Eng|", "𝄞", ReliableTxtEncoding.Utf8],
+        ["Base64|/v8ATQBhAG4|", "Man", ReliableTxtEncoding.Utf16],
+        ["Base64|//5NAGEAbgA|", "Man", ReliableTxtEncoding.Utf16Reverse],
+        ["Base64|AAD+/wAAAE0AAABhAAAAbg|", "Man", ReliableTxtEncoding.Utf32],
     ])("Given %p returns %j and %p", (input, output1, output2) => {
-        const fromDocument = src_1.ReliableTxtDocument.fromBase64String(input);
+        const fromDocument = ReliableTxtDocument.fromBase64String(input);
         expect(fromDocument.text).toEqual(output1);
         expect(fromDocument.encoding).toEqual(output2);
     });
@@ -760,12 +758,12 @@ describe("ReliableTxtDocument.fromBase64String", () => {
         ["BASE64|77u/TWFu|"],
         ["77u/TWFu"],
     ])("Given %p throws", (input) => {
-        expect(() => src_1.ReliableTxtDocument.fromBase64String(input)).toThrow();
+        expect(() => ReliableTxtDocument.fromBase64String(input)).toThrow();
     });
 });
 // ----------------------------------------------------------------------
 test("InvalidBase64StringError", () => {
-    expect(new src_1.InvalidBase64StringError().message).toEqual("Invalid Base64 string");
+    expect(new InvalidBase64StringError().message).toEqual("Invalid Base64 string");
 });
 // ----------------------------------------------------------------------
 describe("Base64String.rawFromBytes + rawToBytes", () => {
@@ -788,9 +786,9 @@ describe("Base64String.rawFromBytes + rawToBytes", () => {
         [[0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF], "////////"],
     ])("Given %p returns %p", (input, output) => {
         const bytes = new Uint8Array(input);
-        const base64Str = src_1.Base64String.rawFromBytes(bytes);
+        const base64Str = Base64String.rawFromBytes(bytes);
         expect(base64Str).toEqual(output);
-        expect(src_1.Base64String.rawToBytes(base64Str)).toEqual(bytes);
+        expect(Base64String.rawToBytes(base64Str)).toEqual(bytes);
     });
 });
 describe("Base64String.rawToBytes", () => {
@@ -803,54 +801,54 @@ describe("Base64String.rawToBytes", () => {
         ["&a=="],
         ["ßa=="],
     ])("Given %p throws", (input) => {
-        expect(() => src_1.Base64String.rawToBytes(input)).toThrow();
+        expect(() => Base64String.rawToBytes(input)).toThrow();
     });
 });
 test("Base64String.rawFromBytes + rawToBytes 256", () => {
     const byteValues = [...Array(256).keys()];
     expect(byteValues.length).toEqual(256);
     const bytes = new Uint8Array(byteValues);
-    const base64Str = src_1.Base64String.rawFromBytes(bytes);
+    const base64Str = Base64String.rawFromBytes(bytes);
     expect(base64Str).toEqual("AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+P0BBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWltcXV5fYGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6e3x9fn+AgYKDhIWGh4iJiouMjY6PkJGSk5SVlpeYmZqbnJ2en6ChoqOkpaanqKmqq6ytrq+wsbKztLW2t7i5uru8vb6/wMHCw8TFxsfIycrLzM3Oz9DR0tPU1dbX2Nna29zd3t/g4eLj5OXm5+jp6uvs7e7v8PHy8/T19vf4+fr7/P3+/w");
-    expect(src_1.Base64String.rawToBytes(base64Str)).toEqual(bytes);
+    expect(Base64String.rawToBytes(base64Str)).toEqual(bytes);
 });
 describe("Base64String.rawFromText + rawToText", () => {
     test.each([
-        ["", src_1.ReliableTxtEncoding.Utf8, "77u/"],
-        ["M", src_1.ReliableTxtEncoding.Utf8, "77u/TQ"],
-        ["Ma", src_1.ReliableTxtEncoding.Utf8, "77u/TWE"],
-        ["Man", src_1.ReliableTxtEncoding.Utf8, "77u/TWFu"],
-        ["Many", src_1.ReliableTxtEncoding.Utf8, "77u/TWFueQ"],
-        ["\uFEFF", src_1.ReliableTxtEncoding.Utf8, "77u/77u/"],
-        ["\u0000", src_1.ReliableTxtEncoding.Utf8, "77u/AA"],
-        ["Many hands make light work.", src_1.ReliableTxtEncoding.Utf8, "77u/TWFueSBoYW5kcyBtYWtlIGxpZ2h0IHdvcmsu"],
-        ["", src_1.ReliableTxtEncoding.Utf16, "/v8"],
-        ["M", src_1.ReliableTxtEncoding.Utf16, "/v8ATQ"],
-        ["Ma", src_1.ReliableTxtEncoding.Utf16, "/v8ATQBh"],
-        ["Man", src_1.ReliableTxtEncoding.Utf16, "/v8ATQBhAG4"],
-        ["\uFEFF", src_1.ReliableTxtEncoding.Utf16, "/v/+/w"],
-        ["\u0000", src_1.ReliableTxtEncoding.Utf16, "/v8AAA"],
-        ["", src_1.ReliableTxtEncoding.Utf16Reverse, "//4"],
-        ["M", src_1.ReliableTxtEncoding.Utf16Reverse, "//5NAA"],
-        ["Ma", src_1.ReliableTxtEncoding.Utf16Reverse, "//5NAGEA"],
-        ["Man", src_1.ReliableTxtEncoding.Utf16Reverse, "//5NAGEAbgA"],
-        ["\uFEFF", src_1.ReliableTxtEncoding.Utf16Reverse, "//7//g"],
-        ["\u0000", src_1.ReliableTxtEncoding.Utf16Reverse, "//4AAA"],
-        ["", src_1.ReliableTxtEncoding.Utf32, "AAD+/w"],
-        ["M", src_1.ReliableTxtEncoding.Utf32, "AAD+/wAAAE0"],
-        ["Ma", src_1.ReliableTxtEncoding.Utf32, "AAD+/wAAAE0AAABh"],
-        ["Man", src_1.ReliableTxtEncoding.Utf32, "AAD+/wAAAE0AAABhAAAAbg"],
-        ["\uFEFF", src_1.ReliableTxtEncoding.Utf32, "AAD+/wAA/v8"],
-        ["\u0000", src_1.ReliableTxtEncoding.Utf32, "AAD+/wAAAAA"],
+        ["", ReliableTxtEncoding.Utf8, "77u/"],
+        ["M", ReliableTxtEncoding.Utf8, "77u/TQ"],
+        ["Ma", ReliableTxtEncoding.Utf8, "77u/TWE"],
+        ["Man", ReliableTxtEncoding.Utf8, "77u/TWFu"],
+        ["Many", ReliableTxtEncoding.Utf8, "77u/TWFueQ"],
+        ["\uFEFF", ReliableTxtEncoding.Utf8, "77u/77u/"],
+        ["\u0000", ReliableTxtEncoding.Utf8, "77u/AA"],
+        ["Many hands make light work.", ReliableTxtEncoding.Utf8, "77u/TWFueSBoYW5kcyBtYWtlIGxpZ2h0IHdvcmsu"],
+        ["", ReliableTxtEncoding.Utf16, "/v8"],
+        ["M", ReliableTxtEncoding.Utf16, "/v8ATQ"],
+        ["Ma", ReliableTxtEncoding.Utf16, "/v8ATQBh"],
+        ["Man", ReliableTxtEncoding.Utf16, "/v8ATQBhAG4"],
+        ["\uFEFF", ReliableTxtEncoding.Utf16, "/v/+/w"],
+        ["\u0000", ReliableTxtEncoding.Utf16, "/v8AAA"],
+        ["", ReliableTxtEncoding.Utf16Reverse, "//4"],
+        ["M", ReliableTxtEncoding.Utf16Reverse, "//5NAA"],
+        ["Ma", ReliableTxtEncoding.Utf16Reverse, "//5NAGEA"],
+        ["Man", ReliableTxtEncoding.Utf16Reverse, "//5NAGEAbgA"],
+        ["\uFEFF", ReliableTxtEncoding.Utf16Reverse, "//7//g"],
+        ["\u0000", ReliableTxtEncoding.Utf16Reverse, "//4AAA"],
+        ["", ReliableTxtEncoding.Utf32, "AAD+/w"],
+        ["M", ReliableTxtEncoding.Utf32, "AAD+/wAAAE0"],
+        ["Ma", ReliableTxtEncoding.Utf32, "AAD+/wAAAE0AAABh"],
+        ["Man", ReliableTxtEncoding.Utf32, "AAD+/wAAAE0AAABhAAAAbg"],
+        ["\uFEFF", ReliableTxtEncoding.Utf32, "AAD+/wAA/v8"],
+        ["\u0000", ReliableTxtEncoding.Utf32, "AAD+/wAAAAA"],
     ])("Given %j returns %p", (input1, input2, output) => {
-        const base64Str = src_1.Base64String.rawFromText(input1, input2);
+        const base64Str = Base64String.rawFromText(input1, input2);
         expect(base64Str).toEqual(output);
-        expect(src_1.Base64String.rawToText(base64Str)).toEqual(input1);
+        expect(Base64String.rawToText(base64Str)).toEqual(input1);
     });
     test("Without encoding", () => {
-        const base64Str = src_1.Base64String.rawFromText("Man");
+        const base64Str = Base64String.rawFromText("Man");
         expect(base64Str).toEqual("77u/TWFu");
-        expect(src_1.Base64String.rawToText(base64Str)).toEqual("Man");
+        expect(Base64String.rawToText(base64Str)).toEqual("Man");
     });
 });
 describe("Base64String.fromBytes + toBytes", () => {
@@ -873,9 +871,9 @@ describe("Base64String.fromBytes + toBytes", () => {
         [[0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF], "Base64|////////|"],
     ])("Given %p returns %p", (input, output) => {
         const bytes = new Uint8Array(input);
-        const base64Str = src_1.Base64String.fromBytes(bytes);
+        const base64Str = Base64String.fromBytes(bytes);
         expect(base64Str).toEqual(output);
-        expect(src_1.Base64String.toBytes(base64Str)).toEqual(bytes);
+        expect(Base64String.toBytes(base64Str)).toEqual(bytes);
     });
 });
 describe("Base64String.toBytes", () => {
@@ -885,28 +883,28 @@ describe("Base64String.toBytes", () => {
         ["Base64|AAAA"],
         ["Base64|"],
     ])("Given %p throws", (input) => {
-        expect(() => src_1.Base64String.toBytes(input)).toThrow();
+        expect(() => Base64String.toBytes(input)).toThrow();
     });
 });
 describe("Base64String.fromText + toText", () => {
     test.each([
-        ["Man", src_1.ReliableTxtEncoding.Utf8, "Base64|77u/TWFu|"],
-        ["Man", src_1.ReliableTxtEncoding.Utf16, "Base64|/v8ATQBhAG4|"],
-        ["Man", src_1.ReliableTxtEncoding.Utf16Reverse, "Base64|//5NAGEAbgA|"],
-        ["Man", src_1.ReliableTxtEncoding.Utf32, "Base64|AAD+/wAAAE0AAABhAAAAbg|"],
-        ["", src_1.ReliableTxtEncoding.Utf8, "Base64|77u/|"],
-        ["a", src_1.ReliableTxtEncoding.Utf8, "Base64|77u/YQ|"],
-        ["\u0000", src_1.ReliableTxtEncoding.Utf8, "Base64|77u/AA|"],
-        ["𝄞", src_1.ReliableTxtEncoding.Utf8, "Base64|77u/8J2Eng|"],
+        ["Man", ReliableTxtEncoding.Utf8, "Base64|77u/TWFu|"],
+        ["Man", ReliableTxtEncoding.Utf16, "Base64|/v8ATQBhAG4|"],
+        ["Man", ReliableTxtEncoding.Utf16Reverse, "Base64|//5NAGEAbgA|"],
+        ["Man", ReliableTxtEncoding.Utf32, "Base64|AAD+/wAAAE0AAABhAAAAbg|"],
+        ["", ReliableTxtEncoding.Utf8, "Base64|77u/|"],
+        ["a", ReliableTxtEncoding.Utf8, "Base64|77u/YQ|"],
+        ["\u0000", ReliableTxtEncoding.Utf8, "Base64|77u/AA|"],
+        ["𝄞", ReliableTxtEncoding.Utf8, "Base64|77u/8J2Eng|"],
     ])("Given %j and %p returns %p", (input1, input2, output) => {
-        const base64Str = src_1.Base64String.fromText(input1, input2);
+        const base64Str = Base64String.fromText(input1, input2);
         expect(base64Str).toEqual(output);
-        expect(src_1.Base64String.toText(base64Str)).toEqual(input1);
+        expect(Base64String.toText(base64Str)).toEqual(input1);
     });
     test("Without encoding", () => {
-        const base64Str = src_1.Base64String.fromText("Man");
+        const base64Str = Base64String.fromText("Man");
         expect(base64Str).toEqual("Base64|77u/TWFu|");
-        expect(src_1.Base64String.toText(base64Str)).toEqual("Man");
+        expect(Base64String.toText(base64Str)).toEqual("Man");
     });
 });
 //# sourceMappingURL=reliabletxt.test.js.map

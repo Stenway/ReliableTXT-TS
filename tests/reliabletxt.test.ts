@@ -1,4 +1,4 @@
-﻿import { Base64String, InvalidBase64StringError, InvalidUtf16StringError, NoReliableTxtPreambleError, ReliableTxtDecoder, ReliableTxtDocument, ReliableTxtEncoder, ReliableTxtEncoding, ReliableTxtEncodingUtil, ReliableTxtLines, StringDecodingError, Utf16String } from "../src"
+﻿import { Base64String, InvalidBase64StringError, InvalidUtf16StringError, NoReliableTxtPreambleError, ReliableTxtDecoder, ReliableTxtDocument, ReliableTxtEncoder, ReliableTxtEncoding, ReliableTxtEncodingUtil, ReliableTxtLines, StringDecodingError, Utf16String } from "../src/reliabletxt.js"
 
 describe("ReliableTxtEncoding", () => {
 	test.each([
@@ -30,7 +30,7 @@ describe("ReliableTxtEncodingUtil.getPreambleSize", () => {
 	)
 
 	test("Invalid encoding", () => {
-		expect(() => ReliableTxtEncodingUtil.getPreambleSize(4)).toThrow(RangeError)
+		expect(() => ReliableTxtEncodingUtil.getPreambleSize(4 as ReliableTxtEncoding)).toThrow(RangeError)
 	})
 })
 
@@ -50,7 +50,7 @@ describe("ReliableTxtEncodingUtil.getPreambleBytes", () => {
 	)
 
 	test("Invalid encoding", () => {
-		expect(() => ReliableTxtEncodingUtil.getPreambleBytes(4)).toThrow(RangeError)
+		expect(() => ReliableTxtEncodingUtil.getPreambleBytes(4 as ReliableTxtEncoding)).toThrow(RangeError)
 	})
 })
 
@@ -696,7 +696,7 @@ describe("ReliableTxtEncoder.encode", () => {
 	)
 
 	test("Invalid encoding", () => {
-		expect(() => ReliableTxtEncoder.encode("", 4)).toThrow(RangeError)
+		expect(() => ReliableTxtEncoder.encode("", 4 as ReliableTxtEncoding)).toThrow(RangeError)
 	})
 })
 
@@ -805,7 +805,7 @@ describe("ReliableTxtDecoder.decodePart", () => {
 		}
 	)
 
-	expect(() => ReliableTxtDecoder.decodePart(new Uint8Array([]), 4)).toThrow(RangeError)
+	expect(() => ReliableTxtDecoder.decodePart(new Uint8Array([]), 4 as ReliableTxtEncoding)).toThrow(RangeError)
 })
 
 // ----------------------------------------------------------------------

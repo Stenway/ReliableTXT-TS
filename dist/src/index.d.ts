@@ -1,2 +1,2 @@
-export * from './reliabletxt';
+export * from './reliabletxt.js';
 //# sourceMappingURL=index.d.ts.map

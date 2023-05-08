@@ -1,16 +1,13 @@
-"use strict";
 /* (C) Stefan John / Stenway / ReliableTXT.com / 2022 */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ReliableTxtDocument = exports.Base64String = exports.InvalidBase64StringError = exports.ReliableTxtDecoder = exports.ReliableTxtEncoder = exports.Utf16String = exports.NoReliableTxtPreambleError = exports.StringDecodingError = exports.InvalidUtf16StringError = exports.ReliableTxtLines = exports.ReliableTxtEncodingUtil = exports.ReliableTxtEncoding = void 0;
-var ReliableTxtEncoding;
+export var ReliableTxtEncoding;
 (function (ReliableTxtEncoding) {
     ReliableTxtEncoding[ReliableTxtEncoding["Utf8"] = 0] = "Utf8";
     ReliableTxtEncoding[ReliableTxtEncoding["Utf16"] = 1] = "Utf16";
     ReliableTxtEncoding[ReliableTxtEncoding["Utf16Reverse"] = 2] = "Utf16Reverse";
     ReliableTxtEncoding[ReliableTxtEncoding["Utf32"] = 3] = "Utf32";
-})(ReliableTxtEncoding = exports.ReliableTxtEncoding || (exports.ReliableTxtEncoding = {}));
+})(ReliableTxtEncoding || (ReliableTxtEncoding = {}));
 // ----------------------------------------------------------------------
-class ReliableTxtEncodingUtil {
+export class ReliableTxtEncodingUtil {
     static getPreambleSize(encoding) {
         if (encoding === ReliableTxtEncoding.Utf8) {
             return 3;
@@ -46,9 +43,8 @@ class ReliableTxtEncodingUtil {
         }
     }
 }
-exports.ReliableTxtEncodingUtil = ReliableTxtEncodingUtil;
 // ----------------------------------------------------------------------
-class ReliableTxtLines {
+export class ReliableTxtLines {
     static join(lines) {
         return lines.join("\n");
     }
@@ -115,30 +111,26 @@ class ReliableTxtLines {
         return [charIndex, lineIndex, lineCharIndex];
     }
 }
-exports.ReliableTxtLines = ReliableTxtLines;
 // ----------------------------------------------------------------------
-class InvalidUtf16StringError extends Error {
+export class InvalidUtf16StringError extends Error {
     constructor() {
         super("Invalid UTF16 string");
     }
 }
-exports.InvalidUtf16StringError = InvalidUtf16StringError;
 // ----------------------------------------------------------------------
-class StringDecodingError extends Error {
+export class StringDecodingError extends Error {
     constructor() {
         super("Could not decode string");
     }
 }
-exports.StringDecodingError = StringDecodingError;
 // ----------------------------------------------------------------------
-class NoReliableTxtPreambleError extends Error {
+export class NoReliableTxtPreambleError extends Error {
     constructor() {
         super("Document does not have a ReliableTXT preamble");
     }
 }
-exports.NoReliableTxtPreambleError = NoReliableTxtPreambleError;
 // ----------------------------------------------------------------------
-class Utf16String {
+export class Utf16String {
     static isValid(str) {
         for (let i = 0; i < str.length; i++) {
             const firstCodeUnit = str.charCodeAt(i);
@@ -365,9 +357,8 @@ class Utf16String {
         return Utf16String.fromUtf16Bytes(utf16Bytes, false);
     }
 }
-exports.Utf16String = Utf16String;
 // ----------------------------------------------------------------------
-class ReliableTxtEncoder {
+export class ReliableTxtEncoder {
     static encode(text, encoding) {
         const textWithPreamble = "\uFEFF" + text;
         return ReliableTxtEncoder.encodePart(textWithPreamble, encoding);
@@ -390,9 +381,8 @@ class ReliableTxtEncoder {
         }
     }
 }
-exports.ReliableTxtEncoder = ReliableTxtEncoder;
 // ----------------------------------------------------------------------
-class ReliableTxtDecoder {
+export class ReliableTxtDecoder {
     static getEncodingOrNull(bytes) {
         if (bytes.length >= 3
             && bytes[0] == 0xEF
@@ -466,14 +456,12 @@ class ReliableTxtDecoder {
         }
     }
 }
-exports.ReliableTxtDecoder = ReliableTxtDecoder;
 // ----------------------------------------------------------------------
-class InvalidBase64StringError extends Error {
+export class InvalidBase64StringError extends Error {
     constructor() {
         super("Invalid Base64 string");
     }
 }
-exports.InvalidBase64StringError = InvalidBase64StringError;
 // ----------------------------------------------------------------------
 class Base64String {
     static rawFromBytes(bytes) {
@@ -621,7 +609,6 @@ class Base64String {
         return ReliableTxtDecoder.decode(bytes).text;
     }
 }
-exports.Base64String = Base64String;
 Base64String.encoderLookup = [
     0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4A,
     0x4B, 0x4C, 0x4D, 0x4E, 0x4F, 0x50, 0x51, 0x52, 0x53, 0x54,
@@ -642,8 +629,9 @@ Base64String.decoderLookup = [
     -1, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40,
     41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, -1, -1, -1, -1, -1,
 ];
+export { Base64String };
 // ----------------------------------------------------------------------
-class ReliableTxtDocument {
+export class ReliableTxtDocument {
     constructor(text = "", encoding = ReliableTxtEncoding.Utf8) {
         this.text = text;
         this.encoding = encoding;
@@ -684,5 +672,4 @@ class ReliableTxtDocument {
         return this.fromBytes(bytes);
     }
 }
-exports.ReliableTxtDocument = ReliableTxtDocument;
 //# sourceMappingURL=reliabletxt.js.map

@@ -1,6 +1,6 @@
 ﻿/* eslint-disable no-console */
 
-import { Base64String } from "../src"
+import { Base64String } from "../src/reliabletxt.js"
 
 let startTimeStamp: number
 let startText: string

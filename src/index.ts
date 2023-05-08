@@ -1,1 +1,1 @@
-export * from './reliabletxt'
+export * from './reliabletxt.js'
