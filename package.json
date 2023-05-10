@@ -1,15 +1,15 @@
 {
   "name": "@stenway/reliabletxt",
-  "version": "0.6.0-beta.0",
+  "version": "0.6.0-beta.1",
   "type": "module",
-  "description": "Encoding and decoding text files in a reliable way",
+  "description": "Encode and decode text files in a reliable way",
   "homepage": "https://www.reliabletxt.com",
   "repository": "github:Stenway/ReliableTXT-TS",
   "bugs": {
     "url": "https://github.com/Stenway/ReliableTXT-TS/issues"
   },
-  "exports": "./dist/src/index.js",
-  "types": "dist/src/index.d.ts",
+  "exports": "./dist/src/reliabletxt.js",
+  "types": "dist/src/reliabletxt.d.ts",
   "files": [
     "/dist/src"
   ],
