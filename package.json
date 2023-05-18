@@ -1,6 +1,6 @@
 {
   "name": "@stenway/reliabletxt",
-  "version": "0.6.0-beta.1",
+  "version": "0.6.0",
   "type": "module",
   "description": "Encode and decode text files in a reliable way",
   "homepage": "https://www.reliabletxt.com",
