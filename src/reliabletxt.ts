@@ -1,4 +1,4 @@
-﻿/* (C) Stefan John / Stenway / ReliableTXT.com / 2022 */
+﻿/* (C) Stefan John / Stenway / ReliableTXT.com / 2023 */
 
 export enum ReliableTxtEncoding {
 	Utf8,
@@ -178,6 +178,31 @@ export abstract class Utf16String {
 			codePointIndex++
 		}
 		return codePoints
+	}
+
+	static getUtf8ByteCount(str: string): number {
+		let byteCount = 0
+		for (let i=0; i<str.length; i++) {
+			const firstCodeUnit: number = str.charCodeAt(i)
+			if (firstCodeUnit <= 0x007F) {
+				byteCount++
+			} else if (firstCodeUnit <= 0x07FF) {
+				byteCount += 2
+			} else {
+				if (firstCodeUnit >= 0xD800 && firstCodeUnit <= 0xDFFF) {
+					if (firstCodeUnit >= 0xDC00) { return -1 }
+					i++
+					if (i >= str.length) { return -1 }
+					const secondCodeUnit: number = str.charCodeAt(i)
+					if (!(secondCodeUnit >= 0xDC00 && secondCodeUnit <= 0xDFFF)) { return -1 }
+					byteCount += 4
+				} else {
+					byteCount += 3
+				}
+			}
+			
+		}
+		return byteCount
 	}
 
 	static toUtf8Bytes(text: string): Uint8Array {

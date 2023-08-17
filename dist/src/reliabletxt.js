@@ -1,4 +1,4 @@
-/* (C) Stefan John / Stenway / ReliableTXT.com / 2022 */
+/* (C) Stefan John / Stenway / ReliableTXT.com / 2023 */
 export var ReliableTxtEncoding;
 (function (ReliableTxtEncoding) {
     ReliableTxtEncoding[ReliableTxtEncoding["Utf8"] = 0] = "Utf8";
@@ -207,6 +207,38 @@ export class Utf16String {
             codePointIndex++;
         }
         return codePoints;
+    }
+    static getUtf8ByteCount(str) {
+        let byteCount = 0;
+        for (let i = 0; i < str.length; i++) {
+            const firstCodeUnit = str.charCodeAt(i);
+            if (firstCodeUnit <= 0x007F) {
+                byteCount++;
+            }
+            else if (firstCodeUnit <= 0x07FF) {
+                byteCount += 2;
+            }
+            else {
+                if (firstCodeUnit >= 0xD800 && firstCodeUnit <= 0xDFFF) {
+                    if (firstCodeUnit >= 0xDC00) {
+                        return -1;
+                    }
+                    i++;
+                    if (i >= str.length) {
+                        return -1;
+                    }
+                    const secondCodeUnit = str.charCodeAt(i);
+                    if (!(secondCodeUnit >= 0xDC00 && secondCodeUnit <= 0xDFFF)) {
+                        return -1;
+                    }
+                    byteCount += 4;
+                }
+                else {
+                    byteCount += 3;
+                }
+            }
+        }
+        return byteCount;
     }
     static toUtf8Bytes(text) {
         Utf16String.validate(text);
@@ -463,7 +495,7 @@ export class InvalidBase64StringError extends Error {
     }
 }
 // ----------------------------------------------------------------------
-class Base64String {
+export class Base64String {
     static rawFromBytes(bytes) {
         const numCompleteTriples = Math.floor(bytes.length / 3);
         const rest = bytes.length % 3;
@@ -629,7 +661,6 @@ Base64String.decoderLookup = [
     -1, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40,
     41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, -1, -1, -1, -1, -1,
 ];
-export { Base64String };
 // ----------------------------------------------------------------------
 export class ReliableTxtDocument {
     constructor(text = "", encoding = ReliableTxtEncoding.Utf8) {

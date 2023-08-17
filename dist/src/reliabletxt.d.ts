@@ -28,6 +28,7 @@ export declare abstract class Utf16String {
     static getCodePointCount(str: string): number;
     static getCodePointArray(str: string): number[];
     static getCodePoints(str: string): Uint32Array;
+    static getUtf8ByteCount(str: string): number;
     static toUtf8Bytes(text: string): Uint8Array;
     static toUtf16Bytes(text: string, littleEndian?: boolean): Uint8Array;
     static toUtf32Bytes(str: string, littleEndian?: boolean): Uint8Array;

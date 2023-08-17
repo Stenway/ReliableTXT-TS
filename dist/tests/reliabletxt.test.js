@@ -226,6 +226,29 @@ describe("Utf16String.getCodePoints", () => {
         expect(() => Utf16String.getCodePoints(input)).toThrow(InvalidUtf16StringError);
     });
 });
+describe("Utf16String.getUtf8ByteCount", () => {
+    test.each([
+        ["", 0],
+        ["a", 1],
+        ["\u007F", 1],
+        ["\u0080", 2],
+        ["\u07FF", 2],
+        ["\u0800", 3],
+        ["\uFFFF", 3],
+        ["\uD834\uDD1E", 4],
+    ])("Given %j returns %p", (input, output) => {
+        expect(Utf16String.getUtf8ByteCount(input)).toEqual(output);
+    });
+    test.each([
+        "\uD800",
+        "\uD800a",
+        "\uD800\uD800",
+        "\uDC00",
+        "\uDC00a"
+    ])("Given %p returns -1", (input) => {
+        expect(Utf16String.getUtf8ByteCount(input)).toEqual(-1);
+    });
+});
 describe("Utf16String.toUtf8Bytes", () => {
     test.each([
         ["", new Uint8Array([])],
