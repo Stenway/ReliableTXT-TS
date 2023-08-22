@@ -1,5 +1,8 @@
 ﻿# Changelog
 
+## 0.8.0
+- renamed ReliableTxtDocument.getBytes to toBytes
+
 ## 0.7.0
 - added Utf16String.getUtf8ByteCount
 

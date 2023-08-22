@@ -588,7 +588,7 @@ export class ReliableTxtDocument {
 		this.encoding = encoding
 	}
 
-	getBytes(): Uint8Array {
+	toBytes(): Uint8Array {
 		return ReliableTxtEncoder.encode(this.text, this.encoding)
 	}
 

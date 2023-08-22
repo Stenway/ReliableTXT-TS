@@ -667,7 +667,7 @@ export class ReliableTxtDocument {
         this.text = text;
         this.encoding = encoding;
     }
-    getBytes() {
+    toBytes() {
         return ReliableTxtEncoder.encode(this.text, this.encoding);
     }
     getLines() {

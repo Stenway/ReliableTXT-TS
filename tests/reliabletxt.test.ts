@@ -861,7 +861,7 @@ describe("ReliableTxtDocument Constructor", () => {
 	})
 })
 
-describe("ReliableTxtDocument.getBytes + fromBytes", () => {
+describe("ReliableTxtDocument.toBytes + fromBytes", () => {
 	test.each([
 		["", ReliableTxtEncoding.Utf8, new Uint8Array([0xEF, 0xBB, 0xBF])],
 		["", ReliableTxtEncoding.Utf16, new Uint8Array([0xFE, 0xFF])],
@@ -874,7 +874,7 @@ describe("ReliableTxtDocument.getBytes + fromBytes", () => {
 	])(
 		"Given %p and %p returns %p",
 		(input, encoding, output) => {
-			expect(new ReliableTxtDocument(input, encoding).getBytes()).toEqual(output)
+			expect(new ReliableTxtDocument(input, encoding).toBytes()).toEqual(output)
 
 			const document = ReliableTxtDocument.fromBytes(output)
 			expect(document.encoding).toBe(encoding)

@@ -54,10 +54,10 @@ For that we first import the **ReliableTxtDocument** class from the ReliableTXT 
 ```ts
 import { ReliableTxtDocument } from "@stenway/reliabletxt"
 const document = new ReliableTxtDocument("Hello 🌎")
-console.log(document.getBytes())
+console.log(document.toBytes())
 ```
 We then create a new ReliableTxtDocument object and pass our text string as argument to the constructor.
-After that we call the **getBytes** method and log the returned bytes to the console.
+After that we call the **toBytes** method and log the returned bytes to the console.
 The method returns a **Uint8Array** with the following byte values:
 
 ```ts
@@ -83,7 +83,7 @@ ReliableTxtDocument class:
 ```ts
 import { ReliableTxtDocument, ReliableTxtEncoding } from "@stenway/reliabletxt"
 const document = new ReliableTxtDocument("Hello 🌎", ReliableTxtEncoding.Utf16)
-console.log(document.getBytes())
+console.log(document.toBytes())
 ```
 We specify to use the **UTF-16** encoding with big endianess byte order. Let's see how the returned bytes look like:
 ```ts
@@ -117,10 +117,10 @@ Let's try to encode such an unpaired surrogate first:
 
 ```ts
 const document = new ReliableTxtDocument("\uDEAD")
-console.log(document.getBytes())
+console.log(document.toBytes())
 ```
 Here we pass a string containing only a low surrogate (inside the range of U+DC00 to U+DFFF).
-When we call the getBytes method, it will throw an **InvalidUtf16StringError**.
+When we call the toBytes method, it will throw an **InvalidUtf16StringError**.
 Let's try it the other way around and decode an invalid byte sequence.
 
 ```ts
@@ -148,7 +148,7 @@ So the following code - where we pass a null codepoint between the letters a and
 ReliableTXT and won't produce an error or truncate parts of the string:
 ```ts
 const document = new ReliableTxtDocument("a\u0000b")
-console.log(document.getBytes())
+console.log(document.toBytes())
 ```
 
 The combination of all of these aspects of ReliableTXT make it such a robust and modern text file format.
@@ -374,7 +374,7 @@ The members of the class are:
 text: string
 encoding: ReliableTxtEncoding
 constructor(text?: string, encoding?: ReliableTxtEncoding)
-getBytes(): Uint8Array
+toBytes(): Uint8Array
 getLines(): string[]
 setLines(lines: string[])
 getCodePoints(): number[]
@@ -393,7 +393,7 @@ let documentUtf16 = new ReliableTxtDocument(text, ReliableTxtEncoding.Utf16)
 
 let documentEncoding = document.encoding
 let documentText = document.text
-let documentBytes = document.getBytes()
+let documentBytes = document.toBytes()
 let documentCodePoints = document.getCodePoints()
 let documentLines = document.getLines()
 

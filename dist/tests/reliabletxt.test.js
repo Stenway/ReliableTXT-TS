@@ -646,7 +646,7 @@ describe("ReliableTxtDocument Constructor", () => {
         expect(document.encoding).toEqual(ReliableTxtEncoding.Utf16);
     });
 });
-describe("ReliableTxtDocument.getBytes + fromBytes", () => {
+describe("ReliableTxtDocument.toBytes + fromBytes", () => {
     test.each([
         ["", ReliableTxtEncoding.Utf8, new Uint8Array([0xEF, 0xBB, 0xBF])],
         ["", ReliableTxtEncoding.Utf16, new Uint8Array([0xFE, 0xFF])],
@@ -657,7 +657,7 @@ describe("ReliableTxtDocument.getBytes + fromBytes", () => {
         ["a", ReliableTxtEncoding.Utf16Reverse, new Uint8Array([0xFF, 0xFE, 0x61, 0x0])],
         ["a", ReliableTxtEncoding.Utf32, new Uint8Array([0x0, 0x0, 0xFE, 0xFF, 0x0, 0x0, 0x0, 0x61])],
     ])("Given %p and %p returns %p", (input, encoding, output) => {
-        expect(new ReliableTxtDocument(input, encoding).getBytes()).toEqual(output);
+        expect(new ReliableTxtDocument(input, encoding).toBytes()).toEqual(output);
         const document = ReliableTxtDocument.fromBytes(output);
         expect(document.encoding).toBe(encoding);
         expect(document.text).toBe(input);

@@ -66,7 +66,7 @@ export declare class ReliableTxtDocument {
     text: string;
     encoding: ReliableTxtEncoding;
     constructor(text?: string, encoding?: ReliableTxtEncoding);
-    getBytes(): Uint8Array;
+    toBytes(): Uint8Array;
     getLines(): string[];
     setLines(lines: string[]): void;
     getCodePoints(): number[];
