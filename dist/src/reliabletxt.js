@@ -495,7 +495,7 @@ export class InvalidBase64StringError extends Error {
     }
 }
 // ----------------------------------------------------------------------
-export class Base64String {
+class Base64String {
     static rawFromBytes(bytes) {
         const numCompleteTriples = Math.floor(bytes.length / 3);
         const rest = bytes.length % 3;
@@ -661,6 +661,7 @@ Base64String.decoderLookup = [
     -1, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40,
     41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, -1, -1, -1, -1, -1,
 ];
+export { Base64String };
 // ----------------------------------------------------------------------
 export class ReliableTxtDocument {
     constructor(text = "", encoding = ReliableTxtEncoding.Utf8) {
