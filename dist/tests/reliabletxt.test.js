@@ -1,4 +1,4 @@
-import { Base64String, InvalidBase64StringError, InvalidUtf16StringError, NoReliableTxtPreambleError, ReliableTxtDecoder, ReliableTxtDocument, ReliableTxtEncoder, ReliableTxtEncoding, ReliableTxtEncodingUtil, ReliableTxtLines, StringDecodingError, Utf16String } from "../src/reliabletxt.js";
+import { Base64String, InvalidBase64StringError, InvalidUtf16StringError, NoReliableTxtPreambleError, RawBase64String, ReliableTxtDecoder, ReliableTxtDocument, ReliableTxtEncoder, ReliableTxtEncoding, ReliableTxtEncodingUtil, ReliableTxtLines, StringDecodingError, Utf16String } from "../src/reliabletxt.js";
 describe("ReliableTxtEncoding", () => {
     test.each([
         [ReliableTxtEncoding.Utf8, 0],
@@ -789,7 +789,7 @@ test("InvalidBase64StringError", () => {
     expect(new InvalidBase64StringError().message).toEqual("Invalid Base64 string");
 });
 // ----------------------------------------------------------------------
-describe("Base64String.rawFromBytes + rawToBytes", () => {
+describe("RawBase64String.encodeBytes + decodeAsBytes", () => {
     test.each([
         [[], ""],
         [[0x4d], "TQ"],
@@ -809,12 +809,12 @@ describe("Base64String.rawFromBytes + rawToBytes", () => {
         [[0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF], "////////"],
     ])("Given %p returns %p", (input, output) => {
         const bytes = new Uint8Array(input);
-        const base64Str = Base64String.rawFromBytes(bytes);
+        const base64Str = RawBase64String.encodeBytes(bytes);
         expect(base64Str).toEqual(output);
-        expect(Base64String.rawToBytes(base64Str)).toEqual(bytes);
+        expect(RawBase64String.decodeAsBytes(base64Str)).toEqual(bytes);
     });
 });
-describe("Base64String.rawToBytes", () => {
+describe("RawBase64String.decodeAsBytes", () => {
     test.each([
         ["a"],
         ["&aaa"],
@@ -824,18 +824,18 @@ describe("Base64String.rawToBytes", () => {
         ["&a=="],
         ["ßa=="],
     ])("Given %p throws", (input) => {
-        expect(() => Base64String.rawToBytes(input)).toThrow();
+        expect(() => RawBase64String.decodeAsBytes(input)).toThrow();
     });
 });
-test("Base64String.rawFromBytes + rawToBytes 256", () => {
+test("RawBase64String.encodeBytes + decodeAsBytes 256", () => {
     const byteValues = [...Array(256).keys()];
     expect(byteValues.length).toEqual(256);
     const bytes = new Uint8Array(byteValues);
-    const base64Str = Base64String.rawFromBytes(bytes);
+    const base64Str = RawBase64String.encodeBytes(bytes);
     expect(base64Str).toEqual("AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+P0BBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWltcXV5fYGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6e3x9fn+AgYKDhIWGh4iJiouMjY6PkJGSk5SVlpeYmZqbnJ2en6ChoqOkpaanqKmqq6ytrq+wsbKztLW2t7i5uru8vb6/wMHCw8TFxsfIycrLzM3Oz9DR0tPU1dbX2Nna29zd3t/g4eLj5OXm5+jp6uvs7e7v8PHy8/T19vf4+fr7/P3+/w");
-    expect(Base64String.rawToBytes(base64Str)).toEqual(bytes);
+    expect(RawBase64String.decodeAsBytes(base64Str)).toEqual(bytes);
 });
-describe("Base64String.rawFromText + rawToText", () => {
+describe("Base64String.encodeText + decodeAsText", () => {
     test.each([
         ["", ReliableTxtEncoding.Utf8, "77u/"],
         ["M", ReliableTxtEncoding.Utf8, "77u/TQ"],
@@ -864,17 +864,18 @@ describe("Base64String.rawFromText + rawToText", () => {
         ["\uFEFF", ReliableTxtEncoding.Utf32, "AAD+/wAA/v8"],
         ["\u0000", ReliableTxtEncoding.Utf32, "AAD+/wAAAAA"],
     ])("Given %j returns %p", (input1, input2, output) => {
-        const base64Str = Base64String.rawFromText(input1, input2);
+        const base64Str = RawBase64String.encodeText(input1, input2);
         expect(base64Str).toEqual(output);
-        expect(Base64String.rawToText(base64Str)).toEqual(input1);
+        expect(RawBase64String.decodeAsText(base64Str)).toEqual(input1);
     });
     test("Without encoding", () => {
-        const base64Str = Base64String.rawFromText("Man");
+        const base64Str = RawBase64String.encodeText("Man");
         expect(base64Str).toEqual("77u/TWFu");
-        expect(Base64String.rawToText(base64Str)).toEqual("Man");
+        expect(RawBase64String.decodeAsText(base64Str)).toEqual("Man");
     });
 });
-describe("Base64String.fromBytes + toBytes", () => {
+// ----------------------------------------------------------------------
+describe("Base64String.encodeBytes + decodeAsBytes", () => {
     test.each([
         [[], "Base64||"],
         [[0x4d], "Base64|TQ|"],
@@ -894,22 +895,22 @@ describe("Base64String.fromBytes + toBytes", () => {
         [[0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF], "Base64|////////|"],
     ])("Given %p returns %p", (input, output) => {
         const bytes = new Uint8Array(input);
-        const base64Str = Base64String.fromBytes(bytes);
+        const base64Str = Base64String.encodeBytes(bytes);
         expect(base64Str).toEqual(output);
-        expect(Base64String.toBytes(base64Str)).toEqual(bytes);
+        expect(Base64String.decodeAsBytes(base64Str)).toEqual(bytes);
     });
 });
-describe("Base64String.toBytes", () => {
+describe("Base64String.decodeAsBytes", () => {
     test.each([
         ["AAAA"],
         ["BASE64|AAAA|"],
         ["Base64|AAAA"],
         ["Base64|"],
     ])("Given %p throws", (input) => {
-        expect(() => Base64String.toBytes(input)).toThrow();
+        expect(() => Base64String.decodeAsBytes(input)).toThrow();
     });
 });
-describe("Base64String.fromText + toText", () => {
+describe("Base64String.encodeText + decodeAsText", () => {
     test.each([
         ["Man", ReliableTxtEncoding.Utf8, "Base64|77u/TWFu|"],
         ["Man", ReliableTxtEncoding.Utf16, "Base64|/v8ATQBhAG4|"],
@@ -920,14 +921,39 @@ describe("Base64String.fromText + toText", () => {
         ["\u0000", ReliableTxtEncoding.Utf8, "Base64|77u/AA|"],
         ["𝄞", ReliableTxtEncoding.Utf8, "Base64|77u/8J2Eng|"],
     ])("Given %j and %p returns %p", (input1, input2, output) => {
-        const base64Str = Base64String.fromText(input1, input2);
+        const base64Str = Base64String.encodeText(input1, input2);
         expect(base64Str).toEqual(output);
-        expect(Base64String.toText(base64Str)).toEqual(input1);
+        expect(Base64String.decodeAsText(base64Str)).toEqual(input1);
     });
     test("Without encoding", () => {
-        const base64Str = Base64String.fromText("Man");
+        const base64Str = Base64String.encodeText("Man");
         expect(base64Str).toEqual("Base64|77u/TWFu|");
-        expect(Base64String.toText(base64Str)).toEqual("Man");
+        expect(Base64String.decodeAsText(base64Str)).toEqual("Man");
+    });
+});
+describe("Base64String.encode + decode & RawBase64String.encode + decode", () => {
+    test.each([
+        ["Man", "77u/TWFu"],
+        ["", "77u/"],
+        ["a", "77u/YQ"],
+        ["\u0000", "77u/AA"],
+        ["𝄞", "77u/8J2Eng"],
+        [new Uint8Array([]), ""],
+        [new Uint8Array([0]), "AA"],
+        [new Uint8Array([0, 0]), "AAA"],
+        [new Uint8Array([0, 0, 0]), "AAAA"],
+        [new Uint8Array([0, 0, 1]), "AAAB"],
+        [new Uint8Array([255]), "/w"],
+        [new Uint8Array([255, 255]), "//8"],
+        [new Uint8Array([255, 255, 255]), "////"],
+        [new Uint8Array([255, 255, 254]), "///+"],
+    ])("Given %j returns %p", (input, output) => {
+        const base64Str = Base64String.encode(input);
+        const rawBase64Str = RawBase64String.encode(input);
+        expect(base64Str).toEqual("Base64|" + output + "|");
+        expect(rawBase64Str).toEqual(output);
+        expect(Base64String.decode(base64Str)).toEqual(input);
+        expect(RawBase64String.decode(rawBase64Str)).toEqual(input);
     });
 });
 //# sourceMappingURL=reliabletxt.test.js.map

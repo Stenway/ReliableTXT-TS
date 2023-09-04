@@ -495,8 +495,8 @@ export class InvalidBase64StringError extends Error {
     }
 }
 // ----------------------------------------------------------------------
-class Base64String {
-    static rawFromBytes(bytes) {
+class RawBase64String {
+    static encodeBytes(bytes) {
         const numCompleteTriples = Math.floor(bytes.length / 3);
         const rest = bytes.length % 3;
         const utf16Bytes = new Uint8Array(numCompleteTriples * 4 * 2 + (rest !== 0 ? ((rest + 1) * 2) : 0));
@@ -540,34 +540,26 @@ class Base64String {
         }
         return Utf16String.fromUtf16Bytes(utf16Bytes, false);
     }
-    static rawFromText(text, encoding = ReliableTxtEncoding.Utf8) {
+    static encodeText(text, encoding = ReliableTxtEncoding.Utf8) {
         const bytes = ReliableTxtEncoder.encode(text, encoding);
-        return this.rawFromBytes(bytes);
+        return this.encodeBytes(bytes);
     }
-    static fromBytes(bytes) {
-        const result = this.rawFromBytes(bytes);
-        return `Base64|${result}|`;
-    }
-    static fromText(text, encoding = ReliableTxtEncoding.Utf8) {
-        const bytes = ReliableTxtEncoder.encode(text, encoding);
-        return this.fromBytes(bytes);
-    }
-    static rawToBytes(base64Str) {
-        if (base64Str.endsWith("=")) {
+    static decodeAsBytes(rawBase64Str) {
+        if (rawBase64Str.endsWith("=")) {
             throw new InvalidBase64StringError();
         }
-        const numCompleteQuadruples = Math.floor(base64Str.length / 4);
-        const restLength = base64Str.length % 4;
+        const numCompleteQuadruples = Math.floor(rawBase64Str.length / 4);
+        const restLength = rawBase64Str.length % 4;
         if (restLength === 1) {
             throw new InvalidBase64StringError();
         }
         const bytes = new Uint8Array(numCompleteQuadruples * 3 + (restLength !== 0 ? restLength - 1 : 0));
         const lookup = this.decoderLookup;
         for (let i = 0; i < numCompleteQuadruples; i++) {
-            const c0 = base64Str.charCodeAt(i * 4);
-            const c1 = base64Str.charCodeAt(i * 4 + 1);
-            const c2 = base64Str.charCodeAt(i * 4 + 2);
-            const c3 = base64Str.charCodeAt(i * 4 + 3);
+            const c0 = rawBase64Str.charCodeAt(i * 4);
+            const c1 = rawBase64Str.charCodeAt(i * 4 + 1);
+            const c2 = rawBase64Str.charCodeAt(i * 4 + 2);
+            const c3 = rawBase64Str.charCodeAt(i * 4 + 3);
             if (c0 > 0x7A || c1 > 0x7A || c2 > 0x7A || c3 > 0x7A) {
                 throw new InvalidBase64StringError();
             }
@@ -587,9 +579,9 @@ class Base64String {
             bytes[i * 3 + 2] = b2;
         }
         if (restLength === 3) {
-            const c0 = base64Str.charCodeAt(numCompleteQuadruples * 4);
-            const c1 = base64Str.charCodeAt(numCompleteQuadruples * 4 + 1);
-            const c2 = base64Str.charCodeAt(numCompleteQuadruples * 4 + 2);
+            const c0 = rawBase64Str.charCodeAt(numCompleteQuadruples * 4);
+            const c1 = rawBase64Str.charCodeAt(numCompleteQuadruples * 4 + 1);
+            const c2 = rawBase64Str.charCodeAt(numCompleteQuadruples * 4 + 2);
             if (c0 > 0x7A || c1 > 0x7A || c2 > 0x7A) {
                 throw new InvalidBase64StringError();
             }
@@ -606,8 +598,8 @@ class Base64String {
             bytes[numCompleteQuadruples * 3 + 1] = b1;
         }
         else if (restLength === 2) {
-            const c0 = base64Str.charCodeAt(numCompleteQuadruples * 4);
-            const c1 = base64Str.charCodeAt(numCompleteQuadruples * 4 + 1);
+            const c0 = rawBase64Str.charCodeAt(numCompleteQuadruples * 4);
+            const c1 = rawBase64Str.charCodeAt(numCompleteQuadruples * 4 + 1);
             if (c0 > 0x7A || c1 > 0x7A) {
                 throw new InvalidBase64StringError();
             }
@@ -622,26 +614,29 @@ class Base64String {
         }
         return bytes;
     }
-    static rawToText(base64Str) {
-        const bytes = this.rawToBytes(base64Str);
+    static decodeAsText(rawBase64Str) {
+        const bytes = this.decodeAsBytes(rawBase64Str);
         return ReliableTxtDecoder.decode(bytes).text;
     }
-    static toBytes(base64Str) {
-        if (!base64Str.startsWith("Base64|")) {
-            throw new InvalidBase64StringError();
+    static encode(stringOrBytes) {
+        if (stringOrBytes instanceof Uint8Array) {
+            return this.encodeBytes(stringOrBytes);
         }
-        if (base64Str.length < 8 || !base64Str.endsWith("|")) {
-            throw new InvalidBase64StringError();
+        else {
+            return this.encodeText(stringOrBytes);
         }
-        base64Str = base64Str.substring(7, base64Str.length - 1);
-        return this.rawToBytes(base64Str);
     }
-    static toText(base64Str) {
-        const bytes = this.toBytes(base64Str);
-        return ReliableTxtDecoder.decode(bytes).text;
+    static decode(rawBase64Str) {
+        const bytes = this.decodeAsBytes(rawBase64Str);
+        if (ReliableTxtDecoder.getEncodingOrNull(bytes) === null) {
+            return bytes;
+        }
+        else {
+            return ReliableTxtDecoder.decode(bytes).text;
+        }
     }
 }
-Base64String.encoderLookup = [
+RawBase64String.encoderLookup = [
     0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4A,
     0x4B, 0x4C, 0x4D, 0x4E, 0x4F, 0x50, 0x51, 0x52, 0x53, 0x54,
     0x55, 0x56, 0x57, 0x58, 0x59, 0x5A,
@@ -651,7 +646,7 @@ Base64String.encoderLookup = [
     0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39,
     0x2B, 0x2F
 ];
-Base64String.decoderLookup = [
+RawBase64String.decoderLookup = [
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 62, -1, -1, -1, 63,
@@ -661,7 +656,49 @@ Base64String.decoderLookup = [
     -1, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40,
     41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, -1, -1, -1, -1, -1,
 ];
-export { Base64String };
+export { RawBase64String };
+// ----------------------------------------------------------------------
+export class Base64String {
+    static encodeBytes(bytes) {
+        const result = RawBase64String.encodeBytes(bytes);
+        return `Base64|${result}|`;
+    }
+    static encodeText(text, encoding = ReliableTxtEncoding.Utf8) {
+        const bytes = ReliableTxtEncoder.encode(text, encoding);
+        return this.encodeBytes(bytes);
+    }
+    static decodeAsBytes(base64Str) {
+        if (!base64Str.startsWith("Base64|")) {
+            throw new InvalidBase64StringError();
+        }
+        if (base64Str.length < 8 || !base64Str.endsWith("|")) {
+            throw new InvalidBase64StringError();
+        }
+        base64Str = base64Str.substring(7, base64Str.length - 1);
+        return RawBase64String.decodeAsBytes(base64Str);
+    }
+    static decodeAsText(base64Str) {
+        const bytes = this.decodeAsBytes(base64Str);
+        return ReliableTxtDecoder.decode(bytes).text;
+    }
+    static encode(stringOrBytes) {
+        if (stringOrBytes instanceof Uint8Array) {
+            return this.encodeBytes(stringOrBytes);
+        }
+        else {
+            return this.encodeText(stringOrBytes);
+        }
+    }
+    static decode(base64Str) {
+        const bytes = this.decodeAsBytes(base64Str);
+        if (ReliableTxtDecoder.getEncodingOrNull(bytes) === null) {
+            return bytes;
+        }
+        else {
+            return ReliableTxtDecoder.decode(bytes).text;
+        }
+    }
+}
 // ----------------------------------------------------------------------
 export class ReliableTxtDocument {
     constructor(text = "", encoding = ReliableTxtEncoding.Utf8) {
@@ -684,7 +721,7 @@ export class ReliableTxtDocument {
         this.text = Utf16String.fromCodePointArray(codePoints);
     }
     toBase64String() {
-        return Base64String.fromText(this.text, this.encoding);
+        return Base64String.encodeText(this.text, this.encoding);
     }
     static fromBytes(bytes) {
         return ReliableTxtDecoder.decode(bytes);
@@ -700,7 +737,7 @@ export class ReliableTxtDocument {
         return document;
     }
     static fromBase64String(base64Str) {
-        const bytes = Base64String.toBytes(base64Str);
+        const bytes = Base64String.decodeAsBytes(base64Str);
         return this.fromBytes(bytes);
     }
 }

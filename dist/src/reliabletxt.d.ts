@@ -50,17 +50,23 @@ export declare abstract class ReliableTxtDecoder {
 export declare class InvalidBase64StringError extends Error {
     constructor();
 }
-export declare abstract class Base64String {
+export declare abstract class RawBase64String {
     private static encoderLookup;
     private static decoderLookup;
-    static rawFromBytes(bytes: Uint8Array): string;
-    static rawFromText(text: string, encoding?: ReliableTxtEncoding): string;
-    static fromBytes(bytes: Uint8Array): string;
-    static fromText(text: string, encoding?: ReliableTxtEncoding): string;
-    static rawToBytes(base64Str: string): Uint8Array;
-    static rawToText(base64Str: string): string;
-    static toBytes(base64Str: string): Uint8Array;
-    static toText(base64Str: string): string;
+    static encodeBytes(bytes: Uint8Array): string;
+    static encodeText(text: string, encoding?: ReliableTxtEncoding): string;
+    static decodeAsBytes(rawBase64Str: string): Uint8Array;
+    static decodeAsText(rawBase64Str: string): string;
+    static encode(stringOrBytes: string | Uint8Array): string;
+    static decode(rawBase64Str: string): string | Uint8Array;
+}
+export declare abstract class Base64String {
+    static encodeBytes(bytes: Uint8Array): string;
+    static encodeText(text: string, encoding?: ReliableTxtEncoding): string;
+    static decodeAsBytes(base64Str: string): Uint8Array;
+    static decodeAsText(base64Str: string): string;
+    static encode(stringOrBytes: string | Uint8Array): string;
+    static decode(base64Str: string): string | Uint8Array;
 }
 export declare class ReliableTxtDocument {
     text: string;

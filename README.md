@@ -204,20 +204,20 @@ Because all four encodings write the ReliableTXT preamble, detecting that it is 
 takes reading the first two to four bytes. All other byte sequences are simply considered to be arbitrary binary data.
 
 Reliable Base64 uses Unicode, so **using supplementary characters is supported**. Let's see it in action.
-The ReliableTXT package has a static class called **Base64String** that offers the static method **fromText**,
+The ReliableTXT package has a static class called **Base64String** that offers the static method **encodeText**,
 which we will use to pass a text string as argument that will be converted to the respective Reliable Base64 string:
 
 ```ts
 import { Base64String } from "@stenway/reliabletxt"
-console.log(Base64String.fromText("Hello 🌎"))
+console.log(Base64String.encodeText("Hello 🌎"))
 ```
 And the returned Reliable Base64 string will be:
 ```
 Base64|77u/SGVsbG8g8J+Mjg|
 ```
-Let's convert the Reliable Base64 string back to its original text content using the static method **toText**:
+Let's convert the Reliable Base64 string back to its original text content using the static method **decodeAsText**:
 ```ts
-console.log(Base64String.toText("Base64|77u/SGVsbG8g8J+Mjg|"))
+console.log(Base64String.decodeAsText("Base64|77u/SGVsbG8g8J+Mjg|"))
 ```
 And the original text will be logged to the console. If we take our original text string and use
 another ReliableTXT encoding (e.g. UTF-16 big endian encoding), the resulting Reliable Base64 string
@@ -225,8 +225,8 @@ will look different, but will be correctly and automatically converted back to t
 
 ```ts
 import { Base64String, ReliableTxtEncoding } from "@stenway/reliabletxt"
-console.log(Base64String.fromText("Hello 🌎", ReliableTxtEncoding.Utf16))
-console.log(Base64String.toText("Base64|/v8ASABlAGwAbABvACDYPN8O|"))
+console.log(Base64String.encodeText("Hello 🌎", ReliableTxtEncoding.Utf16))
+console.log(Base64String.decodeAsText("Base64|/v8ASABlAGwAbABvACDYPN8O|"))
 ```
 
 Let's try to remove the UTF-8 byte order mark from our previously with UTF-8 encoded Reliable Base64 string and see
@@ -234,19 +234,35 @@ what happens when we try to decode it. The UTF-8 byte order mark is represented 
 to the four Base64 characters "77u/", which we can easily remove from the string:
 
 ```ts
-Base64String.toText("Base64|SGVsbG8g8J+Mjg|")
+Base64String.decodeAsText("Base64|SGVsbG8g8J+Mjg|")
 ```
 This will result in a **NoReliableTxtPreambleError**, because a text document without a valid ReliableTXT
 preamble cannot be decoded. But we can decode the Reliable Base64 string as byte sequence using 
-the static **toBytes** method:
+the static **decodeAsBytes** method:
 ```ts
-console.log(Base64String.toBytes("Base64|SGVsbG8g8J+Mjg|"))
+console.log(Base64String.decodeAsBytes("Base64|SGVsbG8g8J+Mjg|"))
 ```
-The counterpart to the toBytes method is the static **fromBytes** method, which can be used like this:
+The counterpart to the toBytes method is the static **encodeBytes** method, which can be used like this:
 ```ts
 const bytes = new Uint8Array([0x48, 0x65, 0x6C, 0x6C, 0x6F])
-const base64str = Base64String.fromBytes(bytes)
+const base64str = Base64String.encodeBytes(bytes)
 ```
+
+If you want to be flexible and want to pass both strings and bytes, you can use the **encode** method, which
+either takes a string as argument or a Uint8Array:
+```ts
+const base64Str1 = Base64String.encode("Hello 🌎")
+const base64Str2 = Base64String.encode(new Uint8Array([0x00, 0x01, 0x02, 0x03])
+```
+The counterpart is the **decode** method which will either return a string or a Uint8Array.
+```ts
+const stringOrBytes: string | Uint8Array = Base64String.decode(base64Str1)
+if (stringOrBytes instanceof Uint8Array) { /* binary data */ }
+else { /* text data */ }
+```
+The automatic detection is possible, because the Reliable Base64 approach encodes text
+as a ReliableTXT document which has an easily detectable preamble. If the preamble
+was found, the bytes are decoded as text, or else the bytes are simply returned.
 
 If you want to know more about Reliable Base64, you can watch the following videos:
 * [Reliable Base64 - No more btoa & atob](https://www.youtube.com/watch?v=Fr6JQy6QZno)
@@ -266,58 +282,67 @@ Learn more about it in detail in [this video](https://www.youtube.com/watch?v=Z0
 The static Base64String class provides all the functionality needed to encode and decode Reliable Base64 strings.
 It has the following members:
 ```ts
-static rawFromBytes(bytes: Uint8Array): string
-static rawFromText(text: string, encoding?: ReliableTxtEncoding): string
-static fromBytes(bytes: Uint8Array): string
-static fromText(text: string, encoding?: ReliableTxtEncoding): string
-static rawToBytes(base64Str: string): Uint8Array
-static rawToText(base64Str: string): string
-static toBytes(base64Str: string): Uint8Array
-static toText(base64Str: string): string
+static encodeBytes(bytes: Uint8Array): string
+static encodeText(text: string, encoding?: ReliableTxtEncoding): string
+static decodeAsBytes(base64Str: string): Uint8Array
+static decodeAsText(base64Str: string): string
+static encode(stringOrBytes: string | Uint8Array): string
+static decode(base64Str: string): string | Uint8Array
 ```
 
-Use the static fromBytes and toBytes methods to convert from bytes to a Reliable Base64 string and back again:
+Use the static encodeBytes and decodeAsBytes methods to convert from bytes to a Reliable Base64 string and back again:
 ```ts
-let bytes = new Uint8Array([0x4D, 0x61, 0x6E])
-let base64str = Base64String.fromBytes(bytes)
+const bytes = new Uint8Array([0x4D, 0x61, 0x6E])
+const base64str = Base64String.encodeBytes(bytes)
 console.log(base64str)
-let returnedBytes = Base64String.toBytes(base64str)
+const returnedBytes = Base64String.decodeAsBytes(base64str)
 console.log(returnedBytes)
 ```
 
-Use the static fromText and toText methods to convert from text to a Reliable Base64 string and back again:
+Use the static encodeText and decodeAsText methods to convert from text to a Reliable Base64 string and back again:
 ```ts
-let text = "a¥ßä€東𝄞"
-let base64str = Base64String.fromText(text)
+const text = "a¥ßä€東𝄞"
+const base64str = Base64String.encodeText(text)
 console.log(base64str)
-let returnedText = Base64String.toText(base64str)
+const returnedText = Base64String.decodeAsText(base64str)
 console.log(returnedText)
 console.log(text === returnedText)
 ```
 
-Specify the used encoding, by passing a ReliableTxtEncoding enum value to the fromText method:
+Specify the used encoding, by passing a ReliableTxtEncoding enum value to the encodeText method:
 ```ts
-let base64str = Base64String.fromText("abc", ReliableTxtEncoding.Utf16)
+const base64str = Base64String.encodeText("abc", ReliableTxtEncoding.Utf16)
 ```
 
-If you want to use the Base64 encoder and decoder without the Reliable Base64 prefix 'Base64|' and suffix '|', use the static rawToBytes, rawFromBytes, rawFromText, and rawToText methods.
+If you want to use the Base64 encoder and decoder without the Reliable Base64 prefix 'Base64|' and suffix '|', use the analogous static methods of the RawBase64String class.
 
 ```ts
-let text = "a¥ßä€東𝄞"
-let base64str = Base64String.rawFromText(text)
+const text = "a¥ßä€東𝄞"
+const base64str = RawBase64String.encodeText(text)
 console.log(base64str)
-let returnedText = Base64String.rawToText(base64str)
+const returnedText = RawBase64String.decodeAsText(base64str)
 console.log(returnedText)
 console.log(text === returnedText)
+```
+
+### RawBase64String
+
+```ts
+static encodeBytes(bytes: Uint8Array): string
+static encodeText(text: string, encoding?: ReliableTxtEncoding): string
+static decodeAsBytes(base64Str: string): Uint8Array
+static decodeAsText(base64Str: string): string
+static encode(stringOrBytes: string | Uint8Array): string
+static decode(base64Str: string): string | Uint8Array
 ```
 
 ### InvalidBase64StringError
 
 An error of type InvalidBase64StringError is thrown when an invalid Reliable Base64 string is passed to
-a Base64 decoding method, like in the following example the static toText method:
+a Base64 decoding method, like in the following example the static decodeAsText method:
 
 ```ts
-Base64String.toText("")
+Base64String.decodeAsText("")
 ```
 
 ### InvalidUtf16StringError
