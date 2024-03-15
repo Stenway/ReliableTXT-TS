@@ -8,7 +8,7 @@ the allowed characters, the encoding and decoding process, and it's associated e
 
 ReliableTXT builds the **foundation for text file formats** like [OML](https://www.youtube.com/watch?v=iqm3sba51p0), [WSV](https://www.whitespacesv.com), [SML](https://www.simpleml.com), and [TBL](https://www.youtube.com/watch?v=mGUlW6YgHjE) (see also the [Stenway Text File Format Stack](https://www.youtube.com/watch?v=m7Z0mrcFeCg)).
 All of these formats **don't need to bother about encoding and decoding** anymore, because they rely on ReliableTXT, which takes care of that aspect. Defining encoding settings on content level, like it can be done in XML and HTML files, or specifying encoding rules on format level, like the JSON specification does, are thus unnecessary.
-Scanning the complete file in order to guess it's encoding is not required anymore, because
+Scanning the complete file in order to guess its encoding is not required anymore, because
 a ReliableTXT file always starts with an **unambiguous preamble**, that clearly identifies the used encoding.
 The loading of a ReliableTXT file is therefore **always 100% automatic**, and thus robust and reliable.
 
